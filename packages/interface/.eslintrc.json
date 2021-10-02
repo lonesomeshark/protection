@@ -1,0 +1,48 @@
+{
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaVersion": 2020,
+      "sourceType": "module",
+      "ecmaFeatures": {
+        // Allows for the parsing of JSX
+        "jsx": true
+      }
+    },
+    "ignorePatterns": ["node_modules/**/*", "*.css","*.png"],
+    "settings": {
+      "react": {
+        "version": "detect"
+      }
+    },
+    "extends": [
+      "plugin:react/recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:react-hooks/recommended",
+      "eslint-config-prettier"
+    ],
+    "plugins": [
+      "eslint-plugin-prettier"
+    ],
+    "rules": {
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "prettier/prettier": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/ban-ts-ignore": "off",
+      "@typescript-eslint/explicit-module-boundary-types": "off",
+      "react/react-in-jsx-scope": "off",
+      "react/display-name": "off",
+      "no-restricted-imports": [
+        "error",
+        {
+          "paths": [
+            {
+              "name": "styled-components",
+              "message": "Please import from styled-components/macro."
+            }
+          ],
+          "patterns": ["!styled-components/macro"]
+        }
+      ]
+    }
+  }

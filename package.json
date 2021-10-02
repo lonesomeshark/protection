@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "scripts": {
+    "start": "yarn compile && yarn start:interface",
+    "start:interface": "yarn workspace @lonesomeshark/interface start",
+    "test": "yarn test:core",
+    "test:interface": "yarn workspace @lonesomeshark/interface test",
+    "test:core": "yarn workspace @lonesomeshark/core test",
+    "test:local:core": "yarn workspace @lonesomeshark/core test:local",
+    "lint": "yarn lint:interface && yarn lint:core",
+    "lint:interface": "yarn workspace @lonesomeshark/interface lint",
+    "lint:core": "yarn workspace @lonesomeshark/core lint",
+    "compile": "yarn workspace @lonesomeshark/core hardhat compile",
+    "clean": "rm -rf */**/yarn* node_modules */**//node_modules"
+  },
+  "devDependencies": {
+    "husky": "^7.0.2"
+  }
+}
