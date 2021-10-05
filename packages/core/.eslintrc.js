@@ -29,7 +29,12 @@ module.exports = {
     },
     {
       files: ['hardhat.config.ts', 'scripts/**', 'test/**'],
-      rules: { 'node/no-unpublished-require': 'off', camelcase: 'off', 'no-unused-vars': 'off' },
+      rules: {
+        'no-lone-blocks': 'off',
+        'node/no-unpublished-require': 'off',
+        camelcase: 'off',
+        'no-unused-vars': 'off',
+      },
     },
   ],
 };
