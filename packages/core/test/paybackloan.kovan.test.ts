@@ -11,22 +11,37 @@ import LendingPoolAddressesProvider from '@aave/protocol-v2/artifacts/contracts/
 import { ILendingPoolAddressesProvider__factory } from '../typechain/factories/ILendingPoolAddressesProvider__factory';
 import { PaybackLoan__factory } from '../typechain/factories/PaybackLoan__factory';
 import { PaybackLoan } from '../typechain/PaybackLoan';
-
+import { networkAddresses } from '../utils/utils';
 let contract: PaybackLoan;
 const contractAddress: string = '0x90A37ccc6B2033a47DED00E25F5423bAF9caaA14';
 let owner: SignerWithAddress, accounts: SignerWithAddress[];
-const linkAddress = '0xa36085F69e2889c224210F603D836748e7dC0088';
 
-const providerAddress = ethers.utils.getAddress('0x88757f2f99175387ab4c6a4b3067c77a695b0349');
+const subscribersAddress = '';
+const monitorAddress = '';
+const {
+  providerAddress,
+  aaveProvider,
+  uniswapRouterAddress,
+  wethAddress,
+  linkAddress,
+  chainlinkRegistryAddress,
+} = networkAddresses.kovan;
 
 describe('kovan PAYBACK LOAN', () => {
   it('create contract', async function () {
     this.timeout(50000);
     [owner, ...accounts] = await ethers.getSigners();
+
     if (contractAddress) {
       contract = await new PaybackLoan__factory(owner).attach(contractAddress);
     } else {
-      contract = await new PaybackLoan__factory(owner).deploy(providerAddress);
+      contract = await new PaybackLoan__factory(owner).deploy(
+        providerAddress,
+        uniswapRouterAddress,
+        subscribersAddress,
+        wethAddress,
+        monitorAddress
+      );
     }
     console.log('📰', 'contract PAYBACKLOAN address-> ', chalk.blue(contract.address));
   });
@@ -46,7 +61,7 @@ describe('kovan PAYBACK LOAN', () => {
     const assets = [linkAddress];
     const amounts = [ethers.utils.parseEther('100.0')];
     const balance1 = await owner.getBalance();
-    const tx = await contract.flashLoanCallDirect(assets, amounts);
+    const tx = await contract.flashLoanCall(owner.address, assets, amounts);
     const balance2 = await owner.getBalance();
     const diff = balance1.sub(balance2);
     await tx.wait();

@@ -9,12 +9,19 @@ import { ILendingPoolAddressesProvider } from '../typechain/ILendingPoolAddresse
 import LendingPool from '@aave/protocol-v2/artifacts/contracts/protocol/lendingpool/LendingPool.sol/LendingPool.json';
 import LendingPoolAddressesProvider from '@aave/protocol-v2/artifacts/contracts/protocol/configuration/LendingPoolAddressesProvider.sol/LendingPoolAddressesProvider.json';
 import { ILendingPoolAddressesProvider__factory } from '../typechain/factories/ILendingPoolAddressesProvider__factory';
+import { networkAddresses } from '../utils/utils';
 let contract: Subscribers;
 const contractAddress: string = '0x44CEd31a8A2CD1B2756f45B1de5D1101fc927402';
 let owner: SignerWithAddress, accounts: SignerWithAddress[];
-const linkAddress = '0xa36085F69e2889c224210F603D836748e7dC0088';
 
-const providerAddress = ethers.utils.getAddress('0x88757f2f99175387ab4c6a4b3067c77a695b0349');
+const {
+  providerAddress,
+  aaveProvider,
+  uniswapRouterAddress,
+  wethAddress,
+  linkAddress,
+  chainlinkRegistryAddress,
+} = networkAddresses.kovan;
 
 describe('kovan Subscribers', () => {
   it('create contract', async function () {
@@ -23,7 +30,13 @@ describe('kovan Subscribers', () => {
     if (contractAddress) {
       contract = await new Subscribers__factory(owner).attach(contractAddress);
     } else {
-      contract = await new Subscribers__factory(owner).deploy(providerAddress);
+      contract = await new Subscribers__factory(owner).deploy(
+        providerAddress,
+        aaveProvider,
+        uniswapRouterAddress,
+        wethAddress,
+        linkAddress
+      );
     }
     console.log('📰', 'contract address-> ', chalk.blue(contract.address));
   });
