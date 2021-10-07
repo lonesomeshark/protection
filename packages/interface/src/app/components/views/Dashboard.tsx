@@ -115,7 +115,7 @@ function Dashboard() {
                         </Tab.List>
                         <Tab.Panels className="bg-secondary">
                             <Tab.Panel>{basic}</Tab.Panel>
-                            <Tab.Panel>Advanced Options</Tab.Panel>
+                            <Tab.Panel><div className="py-24">Advanced Option</div></Tab.Panel>
                         </Tab.Panels>
                     </Tab.Group>
                 </div>
