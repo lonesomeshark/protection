@@ -42,8 +42,8 @@ function Dashboard() {
                             console.log(index)
                         }}>
                         <Tab.List className="flex">
-                            <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-md" : "border border-gray px-2 py-1 rounded-md"}>Basic</Tab>
-                            <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-md" : "border border-gray px-2 py-1 rounded-md"}>Advanced Options</Tab>
+                            <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-t-md" : "border border-gray px-2 py-1 rounded-t-md"}>Basic</Tab>
+                            <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-t-md" : "border border-gray px-2 py-1 rounded-t-md"}>Advanced Options</Tab>
                         </Tab.List>
                         <Tab.Panels className="bg-secondary">
                             <Tab.Panel>{basic}</Tab.Panel>
