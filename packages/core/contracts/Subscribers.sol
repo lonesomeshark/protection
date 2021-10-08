@@ -84,6 +84,48 @@ contract Subscribers {
     }
   }
 
+  struct UserReserveData {
+    uint256 currentATokenBalance;
+    uint256 currentStableDebt;
+    uint256 currentVariableDebt;
+    uint256 principalStableDebt;
+    uint256 scaledVariableDebt;
+    uint256 stableBorrowRate;
+    uint256 liquidityRate;
+    uint40 stableRateLastUpdated;
+    bool usageAsCollateralEnabled;
+  }
+
+  function getUserData() public returns (UserReserveData[] memory) {
+    AaveProtocolDataProvider.TokenData[] memory tokenData = aave.getAllReservesTokens();
+    UserReserveData[] memory data = new UserReserveData[](tokenData.length);
+    for (uint256 i = 0; i < tokenData.length; i++) {
+      (
+        uint256 currentATokenBalance,
+        uint256 currentStableDebt,
+        uint256 currentVariableDebt,
+        uint256 principalStableDebt,
+        uint256 scaledVariableDebt,
+        uint256 stableBorrowRate,
+        uint256 liquidityRate,
+        uint40 stableRateLastUpdated,
+        bool usageAsCollateralEnabled
+      ) = aave.getUserReserveData(tokenData[i].tokenAddress, msg.sender);
+      data[i] = UserReserveData(
+        currentATokenBalance,
+        currentStableDebt,
+        currentVariableDebt,
+        principalStableDebt,
+        scaledVariableDebt,
+        stableBorrowRate,
+        liquidityRate,
+        stableRateLastUpdated,
+        usageAsCollateralEnabled
+      );
+    }
+    return data;
+  }
+
   function getAssetsAndAmounts(address _subscriber)
     external
     view
