@@ -13,17 +13,23 @@ import {Subscribers} from './Subscribers.sol';
 
 contract PaybackLoan is BaseUniswapAdapter {
   address immutable LONESOME_SHARK_MONITOR;
+  address immutable DEBTOR;
   Subscribers subscribers;
+  struct FlashParams {
+    address user;
+  }
 
   constructor(
     ILendingPoolAddressesProvider _provider,
     IUniswapV2Router02 _uniswapRouter,
     Subscribers _subscriber,
     address _wethAddress,
-    address _lonesome_shark
+    address _lonesome_shark,
+    address user
   ) public BaseUniswapAdapter(_provider, _uniswapRouter, _wethAddress) {
     subscribers = _subscriber;
     LONESOME_SHARK_MONITOR = _lonesome_shark;
+    DEBTOR = user;
   }
 
   function executeOperation(
@@ -34,6 +40,8 @@ contract PaybackLoan is BaseUniswapAdapter {
     bytes calldata params
   ) external override returns (bool) {
     require(msg.sender == address(LENDING_POOL), 'CALLER_MUST_BE_LENDING_POOL');
+    FlashParams memory decodedParams = _decodeParams(params);
+    require(decodedParams.user == DEBTOR, 'THIS CONTRACT IS FOR DEBTOR ONLY');
 
     address onBehalfOf = address(this);
     // deposits the flashed onto the lending pool
@@ -43,7 +51,7 @@ contract PaybackLoan is BaseUniswapAdapter {
       // approve the repayment from this contract
       IERC20(assets[i]).approve(address(LENDING_POOL), amounts[i]);
       // function repay( address _reserve, uint256 _amount, address payable _onBehalfOf)
-      LENDING_POOL.repay(assets[i], amounts[i], 1, onBehalfOf);
+      LENDING_POOL.repay(assets[i], amounts[i], 1, decodedParams.user);
     }
 
     // LENDING_POOL.withdraw(assets[i], amounts[i], onBehalfOf);
@@ -75,7 +83,7 @@ contract PaybackLoan is BaseUniswapAdapter {
     }
 
     address onBehalfOf = address(this);
-    bytes memory params = '';
+    bytes memory params = abi.encode(_subscriber);
     uint16 referralCode = 0;
 
     LENDING_POOL.flashLoan(
@@ -89,5 +97,10 @@ contract PaybackLoan is BaseUniswapAdapter {
     );
   }
 
+  function _decodeParams(bytes memory params) internal pure returns (FlashParams memory) {
+    address user = abi.decode(params, (address));
+
+    return FlashParams(user);
+  }
   // receive() payable external {}
 }
