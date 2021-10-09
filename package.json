@@ -32,7 +32,7 @@
     "format:core": "yarn workspace @lonesomeshark/core format",
     "compile": "yarn workspace @lonesomeshark/core hardhat compile",
     "clean": "rm -rf */**/yarn* node_modules */**//node_modules && yarn compile",
-    "deploy:interface": "yarn workspace @lonesomeshark/interface deploy"
+    "deploy:interface": "yarn build && yarn workspace @lonesomeshark/interface deploy"
   },
   "devDependencies": {
     "husky": "^7.0.2"

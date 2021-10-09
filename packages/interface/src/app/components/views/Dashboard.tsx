@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tab } from "@headlessui/react";
 import ethIcon from "../../assets/eth.png";
 import usdcIcon from "../../assets/usdc.png";
@@ -28,291 +28,19 @@ interface UserReserveData {
     liquidityRate: number //ethers.BigNumber;
     stableRateLastUpdated: number //ethers.BigNumber;
     usageAsCollateralEnabled: boolean;
+    token: string,
+    symbol: string
  }
 
-// function useContractLoader(providerOrSigner:any, config = {}) {
-
-// }
-const initialUserData = [
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 0,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'AAVE',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 167100467.330055,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'BAT',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 7187322.836946936,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'BUSD',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 317308178.5394363,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'DAI',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 1569517867.519302,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'ENJ',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 7339537.695236169,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'KNC',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 100.79060638536787,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 8250086.803641606,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: true,
-      symbol: 'LINK',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 16898.205091581574,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'MANA',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 8.006534480594533,
-      currentStableDebt: 0,
-      currentVariableDebt: 0.7592766961558928,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0.7566048875908938,
-      stableBorrowRate: 0,
-      liquidityRate: 22343093.35745289,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'MKR',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 35554993.8272524,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'REN',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 491874395.8982295,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'SNX',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 827749524.9377576,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'sUSD',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 528644967.27131104,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'TUSD',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 30995169.328831326,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'USDC',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 3.0719e-14,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'USDT',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 172168.82210683404,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'WBTC',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0.002017421292620491,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 969244564.7060484,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: true,
-      symbol: 'WETH',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 359866160.3677531,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'YFI',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 208871228.79420793,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'ZRX',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 0,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'UNI',
-      address: undefined
-    },
-    {
-      currentATokenBalance: 0,
-      currentStableDebt: 0,
-      currentVariableDebt: 0,
-      principalStableDebt: 0,
-      scaledVariableDebt: 0,
-      stableBorrowRate: 0,
-      liquidityRate: 384000000,
-      stableRateLastUpdated: 0,
-      usageAsCollateralEnabled: false,
-      symbol: 'AMPL',
-      address: undefined
-    }
-  ]
 const subscribers = getSubscribers("kovan");
+const icons = {
+    "ETH": ethIcon,
+    "USDC": usdcIcon
+}
 function Dashboard() {
     const [ isProtected, setIsProtected ] = useState(false);
     const [ customThreshold, setCustomThreshold ] = useState(1.01);
-    const [ userData, setUserData] = useState<UserReserveData[]>(initialUserData);
+    const [ userData, setUserData] = useState<UserReserveData[]>();
 
 
     // contract interaction
@@ -321,35 +49,53 @@ function Dashboard() {
 
     const contract = (new ethers.Contract(subscribers.address, subscribers.abi, signer)) as Subscribers;
 
-    try {
-
+    useEffect(()=>{
         contract.getUserData()
-                           .then((data) =>{
-                               console.log("return from get user data:", data)
-                            const d: UserReserveData[] = (data as any).map((d: any) => {
-                                return {
-                                    "currentATokenBalance": Number(ethers.utils.formatEther(d.currentATokenBalance)),
-                                    "currentStableDebt": Number(ethers.utils.formatEther(d.currentStableDebt)),
-                                    "currentVariableDebt": Number(ethers.utils.formatEther(d.currentVariableDebt)),
-                                    "principalStableDebt": Number(ethers.utils.formatEther(d.principalStableDebt)),
-                                    "scaledVariableDebt": Number(ethers.utils.formatEther(d.scaledVariableDebt)),
-                                    "stableBorrowRate": Number(ethers.utils.formatEther(d.stableBorrowRate)),
-                                    "liquidityRate": Number(ethers.utils.formatEther(d.liquidityRate)),
-                                    "stableRateLastUpdated": Number(ethers.utils.formatEther(d.stableRateLastUpdated)),
-                                    "usageAsCollateralEnabled": d.usageAsCollateralEnabled
-                                }});
-                            setUserData(d);
-                            
-                           })
-                           .catch(e=>{
-                               console.log("error getting getUserData")
-                               console.error
-                            });
-    } catch (error) {
-        console.log(error);
+        .then((data) =>{
+            console.log("return from get user data:", data)
+            const d: UserReserveData[] = (data as any).map((d: any) => {
+                return {
+                    "currentATokenBalance": Number(ethers.utils.formatEther(d.currentATokenBalance)),
+                    "currentStableDebt": Number(ethers.utils.formatEther(d.currentStableDebt)),
+                    "currentVariableDebt": Number(ethers.utils.formatEther(d.currentVariableDebt)),
+                    "principalStableDebt": Number(ethers.utils.formatEther(d.principalStableDebt)),
+                    "scaledVariableDebt": Number(ethers.utils.formatEther(d.scaledVariableDebt)),
+                    "stableBorrowRate": Number(ethers.utils.formatEther(d.stableBorrowRate)),
+                    "liquidityRate": Number(ethers.utils.formatEther(d.liquidityRate)),
+                    "stableRateLastUpdated": Number(ethers.utils.formatEther(d.stableRateLastUpdated)),
+                    "usageAsCollateralEnabled": d.usageAsCollateralEnabled,
+                    "token": d.token,
+                    "symbol": d.symbol
+                }});
+            console.log("parsed data is: ",d);
+                setUserData(d);
+                
+            })
+            .catch(e =>{
+                console.log("error getting getUserData")
+                console.error(e)
+            });
+            
+        },[])
+    interface IDeposit {
+            asset: "ETH"| string,
+            assetIcon: typeof ethIcon,
+            value: string,
+            apy: string 
     }
+    const filterDeposit = (d: UserReserveData) => d.currentATokenBalance;
 
-    const deposits = [
+    // might need to update it
+    const parseDeposit = (d: UserReserveData): IDeposit => ({
+        asset: d.symbol, 
+        assetIcon: (icons as any)[d.symbol] || ethIcon, 
+        value: d.currentATokenBalance + "", 
+        apy: d.liquidityRate + "%"
+    })
+
+    const deposits = userData && userData.length > 0 
+    ?  userData?.filter(filterDeposit).map(parseDeposit)
+    :[ 
         {
             asset: "ETH",
             assetIcon: ethIcon,
@@ -363,7 +109,6 @@ function Dashboard() {
             apy: "23%"
         }
     ];
-
     const debts = [
         {
             asset: "DAI",
@@ -373,7 +118,7 @@ function Dashboard() {
         }
     ];
 
-    const depositView = deposits.map((item, index) => {
+    const depositView = deposits ? deposits.map((item, index) => {
         return (
             <div key={index} className="grid grid-cols-3 pl-4 pr-16 py-2 border border-gray border-opacity-50 border-t-0 dark:text-white">
                 <div className="text-left flex space-x-2">
@@ -384,9 +129,9 @@ function Dashboard() {
                 <div className="text-right">{item.apy}</div>
             </div>
         )
-    });
+    }) : null;
 
-    const debtView = debts.map((debt, index) => {
+    const debtView = debts ? debts.map((debt, index) => {
             return (
                 <div key={index} className="grid grid-cols-3 py-2 pl-4 border border-gray border-opacity-50 border-t-0 dark:text-white">
                     <div className="text-left flex space-x-2">
@@ -397,7 +142,7 @@ function Dashboard() {
                     <div className="lg:text-left sm:pl-10">{debt.interest}</div>
                 </div>
             )
-    });
+    }): null;
 
     const basic = (
         <div className="basic-panel space-y-4">
