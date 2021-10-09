@@ -1,29 +1,70 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
-import hre from 'hardhat';
+import { ethers, config } from 'hardhat';
+import { networkAddresses } from '../utils/utils';
+import { Subscribers__factory } from '../typechain/factories/Subscribers__factory';
+import { LoneSomeSharkMonitor__factory } from '../typechain/factories/LoneSomeSharkMonitor__factory';
+import { PaybackLoan__factory } from '../typechain/factories/PaybackLoan__factory';
+import chalk from 'chalk';
+import fs from 'fs';
+
+import path from 'path';
+const {
+  providerAddress,
+  aaveProvider,
+  uniswapRouterAddress,
+  wethAddress,
+  linkAddress,
+  chainlinkRegistryAddress,
+} = networkAddresses.kovan;
 
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  const [owner, ...accounts] = await ethers.getSigners();
 
-  // We get the contract to deploy
-  const Greeter = await hre.ethers.getContractFactory('Greeter');
-  const greeter = await Greeter.deploy('Hello, Hardhat!');
+  const subscribers = await new Subscribers__factory(owner).deploy(
+    providerAddress,
+    aaveProvider,
+    uniswapRouterAddress,
+    wethAddress,
+    linkAddress
+  );
 
-  await greeter.deployed();
+  const monitor = await new LoneSomeSharkMonitor__factory(owner).deploy(
+    subscribers.address,
+    chainlinkRegistryAddress,
+    linkAddress
+  );
 
-  console.log('Greeter deployed to:', greeter.address);
+  const payback = await new PaybackLoan__factory(owner).deploy(
+    providerAddress,
+    uniswapRouterAddress,
+    subscribers.address,
+    wethAddress,
+    monitor.address
+  );
+  const p = config.paths.artifacts;
+  const network = await ethers.provider.getNetwork();
+  console.log('📰', `smart contracts deplpoyed with: `, chalk.blue(owner.address));
+
+  [
+    { name: 'PaybackLoan', address: payback.address },
+    { name: 'Subscribers', address: subscribers.address },
+    {
+      name: 'LoneSomeSharkMonitor',
+      address: monitor.address,
+    },
+  ].forEach(({ name, address }) => {
+    const f: any = fs.readFileSync(`${p}/contracts/${name}.sol/${name}.json`).toString();
+    const pf = JSON.parse(f);
+    pf.network = network.name;
+    pf.address = address;
+    const deployedPath = path.resolve(__dirname, `../deployed/${network.name}`);
+    if (!fs.existsSync(deployedPath)) {
+      fs.mkdirSync(deployedPath, { recursive: true });
+    }
+    fs.writeFileSync(path.resolve(deployedPath, name + '.json'), JSON.stringify(pf));
+    console.log('📰', `contract ${name} ${network.name} address: `, chalk.blue(address));
+  });
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main()
   .then(() => process.exit(0))
   .catch((error) => {

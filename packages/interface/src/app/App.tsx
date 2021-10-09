@@ -5,6 +5,18 @@ import useWallets from "../hooks/wallets";
 import { ellipseAddress } from "../lib/utils";
 import { useAppDispatch, useAppSelector } from "../hooks/redux"
 import { setIsDark } from "../slices/theme"
+import subscribersArtifact from "@lonesomeshark/core/deployed/kovan/Subscribers.json";
+// the types are awesome to work with but in react cannot make it work
+import { Subscribers, Subscribers__factory} from "@lonesomeshark/core/typechain"
+
+
+//can use this in the meantime
+const subscribers = { address:subscribersArtifact.address,
+  abi: subscribersArtifact.abi,
+  bytecode: subscribersArtifact.bytecode
+}
+// example but will not work
+// const s =  new Subscribers__factory().attach(subscribers.address)
 
 import { BrowserRouter as Router, Route, Switch, Redirect } from "react-router-dom";
 import { AboutUs, Dashboard, Home } from "./components";
@@ -14,10 +26,10 @@ function App() {
   const isDark = useAppSelector(state => state.theme)
   const [walletState, { connect, disconnect }] = useWallets()
   const { provider, web3Provider, address, chainId, balance, chain } = walletState;
-
   const toggleTheme = () => {
     dispatch(setIsDark(!isDark))
   }
+
 
   return (
     <div className={`App ${isDark ? 'dark' : ''}`}>

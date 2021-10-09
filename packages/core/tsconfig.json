@@ -15,9 +15,11 @@
     "files": ["./hardhat.config.ts"],
     "include": [
       "./test",
+      "./deploy",
+      "./publish",
       "./src",
       "./scripts",
       "./script_interactions",
       "./.eslintrc.js"
-    ]
+, "utils/utils.ts"    ]
   }
