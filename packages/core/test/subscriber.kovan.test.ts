@@ -42,41 +42,41 @@ describe('kovan Subscribers', () => {
     console.log('📰', 'contract address-> ', chalk.blue(contract.address));
   });
 
-  it('finds out information about user debt', async function () {
-    this.timeout(150000);
-    const lendingPoolAddressesProvider = (await new ethers.ContractFactory(
-      LendingPoolAddressesProvider.abi,
-      LendingPoolAddressesProvider.bytecode,
-      owner
-    ).attach(providerAddress)) as ILendingPoolAddressesProvider;
+  // it('finds out information about user debt', async function () {
+  //   this.timeout(150000);
+  //   const lendingPoolAddressesProvider = (await new ethers.ContractFactory(
+  //     LendingPoolAddressesProvider.abi,
+  //     LendingPoolAddressesProvider.bytecode,
+  //     owner
+  //   ).attach(providerAddress)) as ILendingPoolAddressesProvider;
 
-    const lendingPoolAddress = await lendingPoolAddressesProvider.getLendingPool();
-    // 0xE0fBa4Fc209b4948668006B2bE61711b7f465bAe
-    console.log('📰', 'lending pool address-> ', chalk.blue(lendingPoolAddress));
+  //   const lendingPoolAddress = await lendingPoolAddressesProvider.getLendingPool();
+  //   // 0xE0fBa4Fc209b4948668006B2bE61711b7f465bAe
+  //   console.log('📰', 'lending pool address-> ', chalk.blue(lendingPoolAddress));
 
-    const lendingPool = (await new ethers.ContractFactory(
-      LendingPool.abi,
-      LendingPool.bytecode,
-      owner
-    ).attach(lendingPoolAddress)) as ILendingPool;
+  //   const lendingPool = (await new ethers.ContractFactory(
+  //     LendingPool.abi,
+  //     LendingPool.bytecode,
+  //     owner
+  //   ).attach(lendingPoolAddress)) as ILendingPool;
 
-    const userData = await lendingPool.getUserAccountData(owner.address);
-    const userConf = await lendingPool.getUserConfiguration(owner.address);
+  //   const userData = await lendingPool.getUserAccountData(owner.address);
+  //   const userConf = await lendingPool.getUserConfiguration(owner.address);
 
-    console.log({ userConf, userData });
-    console.log({
-      stringifiedConf: userConf.toString(),
-      stringifiedData: userData.toString(),
-    });
-  });
-  it('should subscribe user', async function () {
-    this.timeout(50000);
-    // const tx = await contract.activate(ethers.utils.parseEther("1.01"));
-    // await tx.wait();
-    const account = await contract['getAccount()']();
-    console.log({ accountString: account.toString(), account });
-    // expect(account.).to.be.greaterThan(1.03);
-  });
+  //   console.log({ userConf, userData });
+  //   console.log({
+  //     stringifiedConf: userConf.toString(),
+  //     stringifiedData: userData.toString(),
+  //   });
+  // });
+  // it('should subscribe user', async function () {
+  //   this.timeout(50000);
+  //   // const tx = await contract.activate(ethers.utils.parseEther("1.01"));
+  //   // await tx.wait();
+  //   const account = await contract['getAccount()']();
+  //   console.log({ accountString: account.toString(), account });
+  //   // expect(account.).to.be.greaterThan(1.03);
+  // });
   it('should get userdata', async () => {
     interface UserReserveData {
       currentATokenBalance: BigNumber;
@@ -88,11 +88,20 @@ describe('kovan Subscribers', () => {
       liquidityRate: BigNumber;
       stableRateLastUpdated: BigNumber;
       usageAsCollateralEnabled: boolean;
-      address: string;
+      token: string;
       symbol: string;
     }
-    const data: UserReserveData[] = (await contract.getUserData()) as any;
-    const parsedData = data.map((d: UserReserveData) => {
+    interface UserPosition {
+      totalCollateralETH: number;
+      totalDebtETH: number;
+      availableBorrowsETH: number;
+      currentLiquidationThreshold: number;
+      ltv: number;
+      healthFactor: number;
+    }
+    const data = await contract.getUserData();
+    console.log(data);
+    const parsedData = data[0].map((d) => {
       return {
         currentATokenBalance: Number(ethers.utils.formatEther(d.currentATokenBalance)),
         currentStableDebt: Number(ethers.utils.formatEther(d.currentStableDebt)),
@@ -104,9 +113,21 @@ describe('kovan Subscribers', () => {
         stableRateLastUpdated: Number(ethers.utils.formatEther(d.stableRateLastUpdated)),
         usageAsCollateralEnabled: d.usageAsCollateralEnabled,
         symbol: d.symbol,
-        address: d.address,
+        address: d.token,
       };
     });
     console.log(parsedData);
+    console.log({
+      currentLiquidationThreshold: Number(
+        ethers.utils.formatEther(data.currentLiquidationThreshold)
+      ),
+      healthFactor: Number(ethers.utils.formatEther(data.healthFactor)),
+      availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
+      ltv: Number(ethers.utils.formatEther(data.ltv)),
+      totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
+      totalDebtETH: Number(ethers.utils.formatEther(data.totalDebtETH)),
+    });
   });
+
+  it('should activate user and allow his contract to withdraw funds', async () => {});
 });

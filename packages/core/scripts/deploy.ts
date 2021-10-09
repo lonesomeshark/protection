@@ -39,6 +39,9 @@ async function main() {
   );
   console.log('monitor deployed', chalk.blue(monitor.address));
 
+  await subscribers.updateLoneSomeSharkAddress(monitor.address);
+  console.info('updated lonesomeshark address into the subscriber!');
+
   const payback = await new PaybackLoan__factory(owner).deploy(
     providerAddress,
     uniswapRouterAddress,
@@ -52,8 +55,14 @@ async function main() {
   console.log('📰', `smart contracts deplpoyed with: `, chalk.blue(owner.address));
 
   [
-    { name: 'PaybackLoan', address: payback.address },
-    { name: 'Subscribers', address: subscribers.address },
+    {
+      name: 'PaybackLoan',
+      address: payback.address,
+    },
+    {
+      name: 'Subscribers',
+      address: subscribers.address,
+    },
     {
       name: 'LoneSomeSharkMonitor',
       address: monitor.address,

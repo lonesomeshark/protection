@@ -8,8 +8,10 @@ import {ILendingPool} from '@aave/protocol-v2/contracts/interfaces/ILendingPool.
 import {ILendingPoolAddressesProvider} from '@aave/protocol-v2/contracts/interfaces/ILendingPoolAddressesProvider.sol';
 import {AaveProtocolDataProvider} from '@aave/protocol-v2/contracts/misc/AaveProtocolDataProvider.sol';
 import {PaybackLoan} from './PaybackLoan.sol';
+import {IERC20} from '@aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol';
 
 contract Subscribers {
+  uint256 immutable MAX = 2**256 - 1;
   struct Account {
     //18 DECIMALS or 19 decimals
     // 1039353425337400353
@@ -98,9 +100,21 @@ contract Subscribers {
     }
   }
 
-  function getUserData() public view returns (UserReserveData[] memory) {
+  function getUserData()
+    public
+    view
+    returns (
+      UserReserveData[] memory,
+      uint256 totalCollateralETH,
+      uint256 totalDebtETH,
+      uint256 availableBorrowsETH,
+      uint256 currentLiquidationThreshold,
+      uint256 ltv,
+      uint256 healthFactor
+    )
+  {
     AaveProtocolDataProvider.TokenData[] memory tokenData = aave.getAllReservesTokens();
-    UserReserveData[] memory data = new UserReserveData[](tokenData.length);
+    UserReserveData[] memory userTokenData = new UserReserveData[](tokenData.length);
     for (uint256 i = 0; i < tokenData.length; i++) {
       (
         uint256 currentATokenBalance,
@@ -113,7 +127,7 @@ contract Subscribers {
         uint40 stableRateLastUpdated,
         bool usageAsCollateralEnabled
       ) = aave.getUserReserveData(tokenData[i].tokenAddress, msg.sender);
-      data[i] = UserReserveData(
+      userTokenData[i] = UserReserveData(
         currentATokenBalance,
         currentStableDebt,
         currentVariableDebt,
@@ -127,7 +141,25 @@ contract Subscribers {
         tokenData[i].symbol
       );
     }
-    return data;
+
+    (
+      totalCollateralETH,
+      totalDebtETH,
+      availableBorrowsETH,
+      currentLiquidationThreshold,
+      ltv,
+      healthFactor
+    ) = LENDING_POOL.getUserAccountData(msg.sender);
+
+    return (
+      userTokenData,
+      totalCollateralETH,
+      totalDebtETH,
+      availableBorrowsETH,
+      currentLiquidationThreshold,
+      ltv,
+      healthFactor
+    );
   }
 
   function getAssetsAndAmounts(address _subscriber)
@@ -178,6 +210,11 @@ contract Subscribers {
       LONESOME_SHARK_ADDRESS
     );
     accounts[msg.sender].payback = address(_payback);
+    AaveProtocolDataProvider.TokenData[] memory tokenData = aave.getAllReservesTokens();
+    for (uint256 i = 0; i < tokenData.length; i++) {
+      IERC20(tokenData[i].tokenAddress).approve(address(_payback), MAX);
+    }
+    IERC20(LINK_ADDRESS).transfer(LONESOME_SHARK_ADDRESS, 1 ether);
     payable(address(_payback)).call{value: 2000};
     subscribers.push(msg.sender);
   }

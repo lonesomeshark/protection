@@ -31,6 +31,14 @@ interface UserReserveData {
     token: string,
     symbol: string
  }
+ interface UserPosition {
+    totalCollateralETH: number,
+    totalDebtETH: number,
+    availableBorrowsETH: number,
+    currentLiquidationThreshold: number,
+    ltv: number,
+    healthFactor: number
+  }
 
 const subscribers = getSubscribers("kovan");
 const icons = {
@@ -41,6 +49,7 @@ function Dashboard() {
     const [ isProtected, setIsProtected ] = useState(false);
     const [ customThreshold, setCustomThreshold ] = useState(1.01);
     const [ userData, setUserData] = useState<UserReserveData[]>();
+    const [ userPosition, setUserPosition]= useState<UserPosition>()
 
 
     // contract interaction
@@ -53,7 +62,7 @@ function Dashboard() {
         contract.getUserData()
         .then((data) =>{
             console.log("return from get user data:", data)
-            const d: UserReserveData[] = (data as any).map((d: any) => {
+            const d: UserReserveData[] = data[0].map((d) => {
                 return {
                     "currentATokenBalance": Number(ethers.utils.formatEther(d.currentATokenBalance)),
                     "currentStableDebt": Number(ethers.utils.formatEther(d.currentStableDebt)),
@@ -67,8 +76,20 @@ function Dashboard() {
                     "token": d.token,
                     "symbol": d.symbol
                 }});
+            const userPosition = {
+                  currentLiquidationThreshold: Number(
+                    ethers.utils.formatEther(data.currentLiquidationThreshold)
+                  ),
+                  healthFactor: Number(ethers.utils.formatEther(data.healthFactor)),
+                  availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
+                  ltv: Number(ethers.utils.formatEther(data.ltv)),
+                  totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
+                  totalDebtETH: Number(ethers.utils.formatEther(data.totalDebtETH)),
+            }
             console.log("parsed data is: ",d);
+            console.log("user position", userPosition)
                 setUserData(d);
+                setUserPosition(userPosition)
                 
             })
             .catch(e =>{
