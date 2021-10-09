@@ -19,6 +19,20 @@ contract Subscribers {
     uint256 threshold;
   }
 
+  struct UserReserveData {
+    uint256 currentATokenBalance;
+    uint256 currentStableDebt;
+    uint256 currentVariableDebt;
+    uint256 principalStableDebt;
+    uint256 scaledVariableDebt;
+    uint256 stableBorrowRate;
+    uint256 liquidityRate;
+    uint40 stableRateLastUpdated;
+    bool usageAsCollateralEnabled;
+    address token;
+    string symbol;
+  }
+
   mapping(address => Account) accounts;
   address[] subscribers;
   ILendingPoolAddressesProvider immutable ADDRESSES_PROVIDER;
@@ -84,19 +98,7 @@ contract Subscribers {
     }
   }
 
-  struct UserReserveData {
-    uint256 currentATokenBalance;
-    uint256 currentStableDebt;
-    uint256 currentVariableDebt;
-    uint256 principalStableDebt;
-    uint256 scaledVariableDebt;
-    uint256 stableBorrowRate;
-    uint256 liquidityRate;
-    uint40 stableRateLastUpdated;
-    bool usageAsCollateralEnabled;
-  }
-
-  function getUserData() public returns (UserReserveData[] memory) {
+  function getUserData() public view returns (UserReserveData[] memory) {
     AaveProtocolDataProvider.TokenData[] memory tokenData = aave.getAllReservesTokens();
     UserReserveData[] memory data = new UserReserveData[](tokenData.length);
     for (uint256 i = 0; i < tokenData.length; i++) {
@@ -120,7 +122,9 @@ contract Subscribers {
         stableBorrowRate,
         liquidityRate,
         stableRateLastUpdated,
-        usageAsCollateralEnabled
+        usageAsCollateralEnabled,
+        tokenData[i].tokenAddress,
+        tokenData[i].symbol
       );
     }
     return data;

@@ -10,8 +10,9 @@ import LendingPool from '@aave/protocol-v2/artifacts/contracts/protocol/lendingp
 import LendingPoolAddressesProvider from '@aave/protocol-v2/artifacts/contracts/protocol/configuration/LendingPoolAddressesProvider.sol/LendingPoolAddressesProvider.json';
 import { ILendingPoolAddressesProvider__factory } from '../typechain/factories/ILendingPoolAddressesProvider__factory';
 import { networkAddresses } from '../utils/utils';
+import { BigNumber } from '@ethersproject/bignumber';
 let contract: Subscribers;
-const contractAddress: string = '0x44CEd31a8A2CD1B2756f45B1de5D1101fc927402';
+const contractAddress: string = '';
 let owner: SignerWithAddress, accounts: SignerWithAddress[];
 
 const {
@@ -42,7 +43,7 @@ describe('kovan Subscribers', () => {
   });
 
   it('finds out information about user debt', async function () {
-    this.timeout(50000);
+    this.timeout(150000);
     const lendingPoolAddressesProvider = (await new ethers.ContractFactory(
       LendingPoolAddressesProvider.abi,
       LendingPoolAddressesProvider.bytecode,
@@ -75,5 +76,37 @@ describe('kovan Subscribers', () => {
     const account = await contract['getAccount()']();
     console.log({ accountString: account.toString(), account });
     // expect(account.).to.be.greaterThan(1.03);
+  });
+  it('should get userdata', async () => {
+    interface UserReserveData {
+      currentATokenBalance: BigNumber;
+      currentStableDebt: BigNumber;
+      currentVariableDebt: BigNumber;
+      principalStableDebt: BigNumber;
+      scaledVariableDebt: BigNumber;
+      stableBorrowRate: BigNumber;
+      liquidityRate: BigNumber;
+      stableRateLastUpdated: BigNumber;
+      usageAsCollateralEnabled: boolean;
+      address: string;
+      symbol: string;
+    }
+    const data: UserReserveData[] = (await contract.getUserData()) as any;
+    const parsedData = data.map((d: UserReserveData) => {
+      return {
+        currentATokenBalance: Number(ethers.utils.formatEther(d.currentATokenBalance)),
+        currentStableDebt: Number(ethers.utils.formatEther(d.currentStableDebt)),
+        currentVariableDebt: Number(ethers.utils.formatEther(d.currentVariableDebt)),
+        principalStableDebt: Number(ethers.utils.formatEther(d.principalStableDebt)),
+        scaledVariableDebt: Number(ethers.utils.formatEther(d.scaledVariableDebt)),
+        stableBorrowRate: Number(ethers.utils.formatEther(d.stableBorrowRate)),
+        liquidityRate: Number(ethers.utils.formatEther(d.liquidityRate)),
+        stableRateLastUpdated: Number(ethers.utils.formatEther(d.stableRateLastUpdated)),
+        usageAsCollateralEnabled: d.usageAsCollateralEnabled,
+        symbol: d.symbol,
+        address: d.address,
+      };
+    });
+    console.log(parsedData);
   });
 });
