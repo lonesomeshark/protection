@@ -102,7 +102,7 @@ function Dashboard() {
                         { isProtected && <div className="text-green">are protected</div>}
                         {/* { isProtected && <div className="text-green">are protected</div> }   */}
                     </div>
-                    { isProtected && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-6 z-5"/> }
+                    { isProtected && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-10 z-5"/> }
                     
                 </div>
                 <div className="col-span-2">
