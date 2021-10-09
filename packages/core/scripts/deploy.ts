@@ -16,8 +16,12 @@ const {
   chainlinkRegistryAddress,
 } = networkAddresses.kovan;
 
+console.log(chalk.green('ABOUT TO START NEW DEPLOYMENT'));
 async function main() {
   const [owner, ...accounts] = await ethers.getSigners();
+  console.log('deployer of contract is: ', chalk.blue(owner.address));
+  const network = await ethers.provider.getNetwork();
+  console.log('network: ', chalk.blue(network.name));
 
   const subscribers = await new Subscribers__factory(owner).deploy(
     providerAddress,
@@ -26,12 +30,14 @@ async function main() {
     wethAddress,
     linkAddress
   );
+  console.log('subscribers deployed', chalk.blue(subscribers.address));
 
   const monitor = await new LoneSomeSharkMonitor__factory(owner).deploy(
     subscribers.address,
     chainlinkRegistryAddress,
     linkAddress
   );
+  console.log('monitor deployed', chalk.blue(monitor.address));
 
   const payback = await new PaybackLoan__factory(owner).deploy(
     providerAddress,
@@ -40,8 +46,9 @@ async function main() {
     wethAddress,
     monitor.address
   );
+  console.log('payback deployed', chalk.blue(payback.address));
+
   const p = config.paths.artifacts;
-  const network = await ethers.provider.getNetwork();
   console.log('📰', `smart contracts deplpoyed with: `, chalk.blue(owner.address));
 
   [
@@ -68,6 +75,7 @@ async function main() {
 main()
   .then(() => process.exit(0))
   .catch((error) => {
+    console.log(chalk.redBright('-----------       THERE HAS BEEN AN ERROR      ----------'));
     console.error(error);
     process.exit(1);
   });
