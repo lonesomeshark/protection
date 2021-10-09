@@ -7,7 +7,7 @@ import { useAppDispatch, useAppSelector } from "../hooks/redux"
 import { setIsDark } from "../slices/theme"
 import subscribersArtifact from "@lonesomeshark/core/deployed/kovan/Subscribers.json";
 // the types are awesome to work with but in react cannot make it work
-import { Subscribers, Subscribers__factory} from "@lonesomeshark/core/typechain"
+// import { Subscribers, Subscribers__factory} from "@lonesomeshark/core/typechain"
 
 
 //can use this in the meantime
@@ -33,7 +33,7 @@ function App() {
 
   return (
     <div className={`App ${isDark ? 'dark' : ''}`}>
-      <div className=" bg-white dark:bg-primary h-screen">
+      <div className=" bg-white dark:bg-black-type1 min-h-screen pb-24">
         <Router>
           <Header
             address={ellipseAddress(address)}

@@ -2,7 +2,7 @@ import React from "react";
 
 function AboutUs() {
     return (
-        <div>
+        <div className="dark:text-white">
             Lonesome Shark - About Us
         </div>
     )

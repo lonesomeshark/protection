@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 
 function Home() {
     return (
-        <div className="px-96 space-y-8 mt-10">
-            <div className="text-5xl">Protect your Aave collateral
+        <div className="md:px-40 lg:px-96 space-y-8 mt-10 dark:bg-black-type1">
+            <div className="text-5xl dark:text-white">Protect your Aave collateral
                 against Impermanent losses
                 and shadowy liquidators</div>
             <div className="flex justify-center space-x-4">
