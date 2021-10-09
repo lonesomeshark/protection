@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Switch } from "@headlessui/react"
 import { NavLink } from "react-router-dom";
+import { MenuIcon } from "@heroicons/react/outline";
 
 type Props = {
     address: string,
@@ -10,10 +11,11 @@ type Props = {
     isDark: boolean,
     toggleTheme: () => void,
     connect: () => void,
-    disconnect: () => void
+    disconnect: () => void,
+    openMenu: () => void,
 }
 // function Header({ web3Modal, loadWeb3Modal, logoutOfWeb3Modal}) {
-function Header({ address, network, balance, connected, isDark, toggleTheme, connect, disconnect }: Props) {
+function Header({ address, network, balance, connected, isDark, toggleTheme, connect, disconnect, openMenu }: Props) {
     return (
         <div className="dark:bg-black bg-secondary sticky top-0">
             <nav className="dark:text-white">
@@ -51,6 +53,9 @@ function Header({ address, network, balance, connected, isDark, toggleTheme, con
 
                                 </Switch>
                             </div>
+                        </div>
+                        <div className="md:hidden">
+                            <button onClick={openMenu}><MenuIcon height="20" /></button>   
                         </div>
                     </div>
                 </div>
