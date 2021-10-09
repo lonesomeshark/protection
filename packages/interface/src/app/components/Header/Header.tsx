@@ -21,7 +21,7 @@ function Header({ address, network, balance, connected, isDark, toggleTheme, con
             <nav className="dark:text-white">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex justify-between items-center py-4">
-                        <div className="text-2xl font-semibold">Lone Some Shark</div>
+                        <div className="text-2xl font-semibold">LonesomeShark</div>
                         <div className="hidden md:flex md:space-x-8 md:items-center">
                             {/* {connected && <div>Network : {network}</div>}
                             {connected && <div>Balance : {balance} ETH</div>} */}

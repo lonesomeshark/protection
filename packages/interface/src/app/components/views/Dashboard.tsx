@@ -4,10 +4,38 @@ import ethIcon from "../../assets/eth.png";
 import usdcIcon from "../../assets/usdc.png";
 import daiIcon from "../../assets/dai.png";
 import shield from "../../assets/shield.png";
+import subscribersArtifact from "@lonesomeshark/core/deployed/kovan/Subscribers.json";
+import { ethers } from "ethers";
+
+//can use this in the meantime
+const subscribers = {
+    address: subscribersArtifact.address,
+    abi: subscribersArtifact.abi,
+    bytecode: subscribersArtifact.bytecode
+  }
+
+// function useContractLoader(providerOrSigner:any, config = {}) {
+
+// }
 
 function Dashboard() {
     const [ isProtected, setIsProtected ] = useState(false);
     const [ customThreshold, setCustomThreshold ] = useState(1.01);
+
+
+    // contract interaction
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+
+    const contract = new ethers.Contract(subscribers.address, subscribers.abi, signer);
+
+    try {
+        const tx = contract.getUserData()
+                           .then(console.log);
+    } catch (error) {
+        console.log(error);
+    }
+
     const deposits = [
         {
             asset: "ETH",
