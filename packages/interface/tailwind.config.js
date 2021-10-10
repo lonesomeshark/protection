@@ -30,7 +30,9 @@ module.exports = {
         DEFAULT: '#7749F8',
       },
       gray: {
-        DEFAULT: '#DEE2E6'
+        DEFAULT: '#DEE2E6',
+        type1: '#8C8C8C',
+
       }
 
     },
