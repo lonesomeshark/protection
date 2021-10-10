@@ -24,5 +24,10 @@
   "theme_color": "#7749F8",
   "background_color": "#ffffff",
   "homepage_url": "https://lonesomeshark.xyz",
-  "skylink": "AQCbNkLANXHxPCBoXcgq6rauHa81Z5h9da88rVvijXSvTA"
+  "skylink": "AQCbNkLANXHxPCBoXcgq6rauHa81Z5h9da88rVvijXSvTA",
+  "metadata": {
+    "name": "Lonesome Shark",
+    "description": "lonesome shark",
+    "themeColor": "#7749F8"
+  }
 }
