@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Tab } from "@headlessui/react";
-import ethIcon from "../../assets/eth.png";
+import ethIcon from "../../assets/eth.svg";
 import usdcIcon from "../../assets/usdc.png";
-import daiIcon from "../../assets/dai.png";
+import daiIcon from "../../assets/dai.svg";
+import batIcon from "../../assets/BAT.svg";
+import linkIcon from "../../assets/link.svg";
+import inchIcon from "../../assets/1INCH.svg";
+import wbtcIcon from "../../assets/WBTC.svg";
+// import susdIcon from '../../assets/susd.png';
 import shield from "../../assets/shield.png";
 import { ArrowRightIcon } from "@heroicons/react/outline";
 import { Tab as ChakraTab, Tabs, TabList, TabPanel, TabPanels } from "@chakra-ui/tabs";
@@ -47,7 +52,28 @@ interface UserPosition {
 const subscribers = getSubscribers("kovan");
 const icons = {
     "ETH": ethIcon,
-    "USDC": usdcIcon
+    "USDC": usdcIcon,
+    "AAVE": ethIcon,
+    "BAT": batIcon,
+    "1INCH": inchIcon,
+    //  "BUSD": ethIcon,
+     "DAI": daiIcon,
+    "ENJ": ethIcon,
+    "KNC": ethIcon,
+    "LINK":linkIcon,
+    "MANA":ethIcon,
+    "MKR": ethIcon ,
+    "REN": ethIcon ,
+    "SNX": ethIcon ,
+    "sUSD": usdcIcon,
+    "TUSD": ethIcon,
+    "USDT": ethIcon ,
+    "WBTC": wbtcIcon,
+    "WETH": ethIcon,
+    "YFI": ethIcon ,
+    "ZRX": ethIcon,
+    "UNI": ethIcon ,
+    "AMPL": ethIcon,
 }
 
 function Dashboard() {
