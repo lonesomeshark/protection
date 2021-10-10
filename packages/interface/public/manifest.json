@@ -1,26 +1,28 @@
 {
   "short_name": "LonesomeShark",
-  "name": "protect your debt",
+  "name": "Lonesome Shark",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "logo.svg",
       "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "type": "image/svg"
     },
     {
-      "src": "logo192.png",
+      "src": "logo192x192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo.png",
+      "src": "logo512x512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
+  "providedBy": { "name": "LoneSomeShark", "url": "https://lonesomeshark.xyz" },
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#7749F8",
   "background_color": "#ffffff",
+  "homepage_url": "https://lonesomeshark.xyz",
   "skylink": "AQCbNkLANXHxPCBoXcgq6rauHa81Z5h9da88rVvijXSvTA"
 }
