@@ -40,7 +40,8 @@ describe('kovan PAYBACK LOAN', () => {
         uniswapRouterAddress,
         subscribersAddress,
         wethAddress,
-        monitorAddress
+        monitorAddress,
+        owner.address
       );
     }
     console.log('📰', 'contract PAYBACKLOAN address-> ', chalk.blue(contract.address));
