@@ -95,7 +95,6 @@ function Dashboard() {
     const [userPosition, setUserPosition] = useState<UserPosition>();
     const [thrshldModified, setThrshldModified] = useState(false);
     const [userAccount, setUserAccount] = useState<UserAccount>();
-    const [approvedCollaterals, setApproveCollaterals] = useState<string[]>();
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -269,11 +268,6 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
     .catch(console.error)
 }
 
-useEffect(() => {
-    console.log("Approved Collaterals updated");
-    console.log("New value of approved collaterals", approvedCollaterals);
-},[approvedCollaterals]);
-
     const depositView = deposits ? deposits.map((item, index) => {
         return (
             <div key={index} className="grid grid-cols-3 pl-4 pr-16 py-2 border border-gray border-opacity-50 border-t-0 dark:text-white">
@@ -422,7 +416,7 @@ useEffect(() => {
 const collateralsTab = (<div className="pt-6 pl-4 pb-8 space-x-2 space-y-2">
     <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan</div>
     { userData && userData.length>0 && userData?.map(token=>{
-        return <button key={token.token} className={`text-white bg-purple px-3 py-2 rounded-md`} onClick={approveMyCollateral(token.token, token.symbol)} disabled={approvedCollaterals && token.symbol in approvedCollaterals}>{token.symbol}</button>
+        return <button key={token.token} className={` px-3 py-2 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'bg-green cursor-default opacity-50 text-gray' : 'text-white bg-purple'}`} onClick={approveMyCollateral(token.token, token.symbol)} disabled={userAccount?.collaterals.includes(token.token)}>{token.symbol}</button>
     })
     }
 </div>);
@@ -453,9 +447,9 @@ const dashboard = (
             <div className="col-span-2">
                     <Tabs variant="enclosed" index={atIndex}>
                         <TabList>
-                            <ChakraTab onClick={() => setAtIndex(0)}>1. Set your threshold</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0}>2. Gas Limit</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={[0,1].includes(atIndex)}>3. Collaterals</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. Set your threshold</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0} className="dark:text-white">2. Gas Limit</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={[0,1].includes(atIndex)} className="dark:text-white">3. Collaterals</ChakraTab>
 
                         </TabList>
                         <TabPanels className="bg-secondary">
