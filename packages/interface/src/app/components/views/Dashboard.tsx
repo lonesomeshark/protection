@@ -128,14 +128,31 @@ function Dashboard() {
         value: string,
         apy: string
     }
+
+    interface IDebt {
+        asset: "ETH" | string,
+        assetIcon: typeof ethIcon,
+        value: string,
+        interest: string
+    }
+
     const filterDeposit = (d: UserReserveData) => d.currentATokenBalance;
+
+    const filterDebt = (d: UserReserveData) => d.currentVariableDebt;
+    const parseDebt = (d: UserReserveData): IDebt => ({
+        asset: d.symbol,
+        assetIcon: (icons as any)[d.symbol] || ethIcon,
+        value: (d.currentVariableDebt).toFixed(3) + "",
+        interest: (d.liquidityRate/10000000).toFixed(3) + "%"
+    }) 
+
 
     // might need to update it
     const parseDeposit = (d: UserReserveData): IDeposit => ({
         asset: d.symbol,
         assetIcon: (icons as any)[d.symbol] || ethIcon,
         value: (d.currentATokenBalance).toFixed(3) + "",
-        apy: (d.liquidityRate).toFixed(3) + "%"
+        apy: (d.liquidityRate/10000000).toFixed(3) + "%"
     })
 
     const deposits = userData && userData.length > 0
@@ -154,7 +171,7 @@ function Dashboard() {
                 apy: "23%"
             }
         ];
-    const debts = [
+    const debts = userData && userData.length > 0 ? userData?.filter(filterDebt).map(parseDebt) : [
         {
             asset: "DAI",
             assetIcon: daiIcon,
