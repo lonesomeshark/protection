@@ -252,6 +252,7 @@ const protectMyAssets = ()=>{
                 console.log(tx)
                 setIsProtected(!isProtected);
                 setAtIndex(2);
+                getLatestUserAccount();
 
             }
         )
@@ -262,12 +263,8 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
     contract
     .approveAsCollateralOnlyIfAllowedInAave(_token)
     .then((tx)=>{
-        console.log("transaction for allowing token: ",_token, _symbol, tx)
-        const collateral = approvedCollaterals === undefined ? [] : approvedCollaterals;
-        collateral.push(_symbol);
-        setApproveCollaterals(collateral);
-        
-        console.log("The list of approved collaterals",approvedCollaterals);
+        console.log("transaction for allowing token: ",_token, _symbol, tx);
+        getLatestUserAccount();
     })
     .catch(console.error)
 }

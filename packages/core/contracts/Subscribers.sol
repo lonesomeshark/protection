@@ -77,14 +77,10 @@ contract Subscribers {
 
   function getAccount(address _subscriber) public view returns (Account memory) {
     require(_subscriber != address(0), 'address not present');
-    require(accounts[_subscriber].hf == 0, 'you are not registered in our records');
-    require(accounts[_subscriber].active, 'user is not active in our records');
     return accounts[_subscriber];
   }
 
   function getAccount() public view returns (Account memory) {
-    require(accounts[msg.sender].hf == 0, 'you are not registered in our records');
-    require(accounts[msg.sender].active, 'you are not active in our records');
     return accounts[msg.sender];
   }
 
