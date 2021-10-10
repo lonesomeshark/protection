@@ -40,6 +40,14 @@ interface UserReserveData {
     token: string,
     symbol: string
 }
+
+interface UserAccount {
+    hf: number;
+    active: boolean;
+    payback: string;
+    threshold: number;
+    collaterals: string[] //token addresses
+}
 interface UserPosition {
     totalCollateralETH: number,
     totalDebtETH: number,
@@ -82,10 +90,12 @@ function Dashboard() {
     const [thrshldValdsnErrMsg, setThrshldValdsnErrMsg] = useState("");
     const [gasValdsnErrMsg, setGasValdsnErrMsg] = useState("");
     const [customThreshold, setCustomThreshold] = useState("1.01");
-    const [custmGasLimit, setCustmGasLimit] = useState("21000");
+    const [custmGasLimit, setCustmGasLimit] = useState("100000");
     const [userData, setUserData] = useState<UserReserveData[]>();
     const [userPosition, setUserPosition] = useState<UserPosition>();
     const [thrshldModified, setThrshldModified] = useState(false);
+    const [userAccount, setUserAccount] = useState<UserAccount>();
+    const [approvedCollaterals, setApproveCollaterals] = useState<string[]>();
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -137,17 +147,26 @@ function Dashboard() {
 
     }, [])
 
-    // useEffect(() => {
-    //     if(userPosition?.totalCollateralETH !== undefined) {
-    //         try {
-    //             getDollarValue("ethereum", userPosition.totalCollateralETH)?.then( res => setAssetInUSD(res.toFixed(3).toString()));
-    //         } catch(err) {
-    //             console.log(err)
-    //         }
-    //     }
+    const getLatestUserAccount = ()=>{
+        contract["getAccount()"]()
+        .then((account) =>{
 
-    // },[userPosition]);
-
+            const data = {
+                hf: parseToNumber(account.hf),
+                active: account.active,
+                payback: account.payback,
+                threshold: parseToNumber(account.threshold),
+                collaterals: account.collaterals
+            }
+            console.log("user account is", {account, data})
+            setUserAccount(data)
+        })
+        .catch(console.error)
+    }
+    useEffect(()=>{
+        console.log("getting user account data")
+        getLatestUserAccount()
+    },[])
     interface IDeposit {
         asset: "ETH" | string,
         assetIcon: typeof ethIcon,
@@ -222,6 +241,38 @@ function Dashboard() {
             transactionHash: "0xc1234wdsdcsas1233dasdasd"
         }
     ];
+const protectMyAssets = ()=>{
+    console.log("protecting my assets: ");
+    const val = formatTreshold(customThreshold);
+    console.log({customThreshold, val})
+
+    contract.activate(val)
+        .then(
+            (tx)=>{
+                console.log(tx)
+                setIsProtected(!isProtected);
+                setAtIndex(2);
+                getLatestUserAccount();
+
+            }
+        )
+        .catch(console.error)
+}
+
+const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
+    contract
+    .approveAsCollateralOnlyIfAllowedInAave(_token)
+    .then((tx)=>{
+        console.log("transaction for allowing token: ",_token, _symbol, tx);
+        getLatestUserAccount();
+    })
+    .catch(console.error)
+}
+
+useEffect(() => {
+    console.log("Approved Collaterals updated");
+    console.log("New value of approved collaterals", approvedCollaterals);
+},[approvedCollaterals]);
 
     const depositView = deposits ? deposits.map((item, index) => {
         return (
@@ -310,8 +361,8 @@ function Dashboard() {
             return;
         }
 
-        if (!isProtected) {
-            setIsProtected(true);
+        if(!isProtected) {
+            protectMyAssets()
         }
         setGasValdsnErrMsg("");
     };
@@ -368,36 +419,57 @@ function Dashboard() {
         </div>
     </div>);
 
-    const dashboard = (
-        <div>
-            <div className="md:grid grid-cols-3 mt-10 text-left gap-8 space-y-4 md:space-y-0">
-                <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
+const collateralsTab = (<div className="pt-6 pl-4 pb-11 space-x-2 space-y-2">
+    <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan</div>
+    { userData && userData.length>0 && userData?.map(token=>{
+        return <button key={token.token} className={`text-white bg-purple px-3 py-2 rounded-md`} onClick={approveMyCollateral(token.token, token.symbol)} disabled={approvedCollaterals && token.symbol in approvedCollaterals}>{token.symbol}</button>
+    })
+    }
+</div>);
 
-                    <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
-                        <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
-                        <div className="text-semibold text-5xl">{userPosition?.totalDebtETH || 0} ETH</div>
-                        {!isProtected && <div className="text-red-type1">are not protected</div>}
-                        {isProtected && <div className="text-green">are protected</div>}
-                        {/* { isProtected && <div className="text-green">are protected</div> }   */}
-                    </div>
-                    {isProtected && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-10 z-5" />}
+const monitoringTab = (<div className="pt-6 pl-4 pb-11">
+    <div className="pb-2 opacity-50">Set your gas limit</div>
+    <div className="pb-8 opacity-50 text-5xl max-w-min" contentEditable="true">21000</div>
+    <div>
+        <button className="text-white bg-purple px-3 py-2 rounded-md" onClick={protectMyAssets}>Finish & protect my assets</button></div>
+</div>);
 
+const dashboard = (
+    <div>
+        <div className="md:grid grid-cols-3 mt-10 text-left gap-8 space-y-4 md:space-y-0">
+            <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
+
+                <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
+                    <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
+                    <div className="text-semibold text-5xl">{userPosition?.totalDebtETH || 0} ETH</div>
+                    {!isProtected && <div className="text-red-type1">are not protected</div>}
+                    {isProtected && <div className="text-green">are protected</div>}
+                    {/* { isProtected && <div className="text-green">are protected</div> }   */}
                 </div>
-                <div className="col-span-2">
+                {isProtected && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-10 z-5" />}
+                
+            </div>
+
+            <div className="col-span-2">
                     <Tabs variant="enclosed" index={atIndex}>
                         <TabList>
-                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. Set your threshold</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0} className="dark:text-white">2. Gas Limit</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(0)}>1. Set your threshold</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0}>2. Gas Limit</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={[0,1].includes(atIndex)}>3. Collaterals</ChakraTab>
+
                         </TabList>
                         <TabPanels className="bg-secondary">
                             <TabPanel>{setThreshold}</TabPanel>
                             <TabPanel>{gasLimitTab}</TabPanel>
+                            <TabPanel>{collateralsTab}</TabPanel>
                         </TabPanels>
 
                     </Tabs>
                 </div>
-            </div>
-            <div className="lg:flex mt-10 lg:space-x-8">
+            
+        </div>
+
+        <div className="lg:flex mt-10 lg:space-x-8">
                 <div className="space-y-4 max-w-screen-sm">
                     <div className="opacity-50 text-left dark:text-white">YOUR DEPOSITS</div>
                     <div>
@@ -420,7 +492,8 @@ function Dashboard() {
                         {debtView}
                     </div>
                 </div>
-            </div>
+            </div>   
+
         </div>
     );
 
@@ -465,4 +538,8 @@ function parseToNumber(b: ethers.BigNumber, decimals = 18) {
     const val = ethers.utils.formatUnits(b, decimals);
     const parsedVal = parseFloat(val);
     return Number(parsedVal.toFixed(3));
+}
+
+function formatTreshold(t: number | string){
+    return ethers.utils.parseEther(t+"");
 }

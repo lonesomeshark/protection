@@ -42,23 +42,23 @@ async function main() {
   await subscribers.updateLoneSomeSharkAddress(monitor.address);
   console.info('updated lonesomeshark address into the subscriber!');
 
-  const payback = await new PaybackLoan__factory(owner).deploy(
-    providerAddress,
-    uniswapRouterAddress,
-    subscribers.address,
-    wethAddress,
-    monitor.address
-  );
-  console.log('payback deployed', chalk.blue(payback.address));
+  // const payback = await new PaybackLoan__factory(owner).deploy(
+  //   providerAddress,
+  //   uniswapRouterAddress,
+  //   subscribers.address,
+  //   wethAddress,
+  //   monitor.address
+  // );
+  // console.log('payback deployed', chalk.blue(payback.address));
 
   const p = config.paths.artifacts;
   console.log('📰', `smart contracts deplpoyed with: `, chalk.blue(owner.address));
 
   [
-    {
-      name: 'PaybackLoan',
-      address: payback.address,
-    },
+    // {
+    //   name: 'PaybackLoan',
+    //   address: payback.address,
+    // },
     {
       name: 'Subscribers',
       address: subscribers.address,
