@@ -419,7 +419,7 @@ useEffect(() => {
         </div>
     </div>);
 
-const collateralsTab = (<div className="pt-6 pl-4 pb-11 space-x-2 space-y-2">
+const collateralsTab = (<div className="pt-6 pl-4 pb-8 space-x-2 space-y-2">
     <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan</div>
     { userData && userData.length>0 && userData?.map(token=>{
         return <button key={token.token} className={`text-white bg-purple px-3 py-2 rounded-md`} onClick={approveMyCollateral(token.token, token.symbol)} disabled={approvedCollaterals && token.symbol in approvedCollaterals}>{token.symbol}</button>
