@@ -86,7 +86,7 @@ function Dashboard() {
                       availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
                       ltv: Number(ethers.utils.formatEther(data.ltv)),
                       totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
-                      totalDebtETH: Number(ethers.utils.formatEther(data.totalDebtETH)),
+                      totalDebtETH: parseToNumber(data.totalDebtETH),
                 }
                 console.log("parsed data is: ",d);
                 console.log("user position", userPosition)
@@ -243,8 +243,8 @@ const dashboard = (
             <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
 
                 <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
-                    <div className="text-lg opacity-50 pb-4">Total Aave Deposits in USD</div>
-                    <div className="text-semibold text-5xl">$12</div>
+                    <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
+                    <div className="text-semibold text-5xl">{userPosition?.totalDebtETH || 0} ETH</div>
                     {!isProtected && <div className="text-red-type1">are not protected</div>}
                     {isProtected && <div className="text-green">are protected</div>}
                     {/* { isProtected && <div className="text-green">are protected</div> }   */}
@@ -331,3 +331,11 @@ return (
 }
 
 export default Dashboard;
+
+
+function parseToNumber(b: ethers.BigNumber, decimals = 18){
+    const val = ethers.utils.formatUnits(b, decimals);
+    const parsedVal = parseFloat(val);
+    return Number(parsedVal.toFixed(3));
+
+}
