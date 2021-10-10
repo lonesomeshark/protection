@@ -62,7 +62,7 @@ function Dashboard() {
     const [thrshldValdsnErrMsg, setThrshldValdsnErrMsg] = useState("");
     const [gasValdsnErrMsg, setGasValdsnErrMsg] = useState("");
     const [customThreshold, setCustomThreshold] = useState("1.01");
-    const [custmGasLimit, setCustmGasLimit] = useState("21000");
+    const [custmGasLimit, setCustmGasLimit] = useState("100000");
     const [userData, setUserData] = useState<UserReserveData[]>();
     const [userPosition, setUserPosition] = useState<UserPosition>();
     const [thrshldModified, setThrshldModified] = useState(false);
