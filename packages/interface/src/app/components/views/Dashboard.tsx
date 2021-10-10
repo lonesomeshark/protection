@@ -186,7 +186,7 @@ const debtView = debts ? debts.map((debt, index) => {
 
 const historyView = mockhistory ? mockhistory.map((item, index) => {
     return (
-        <div key={index} className="grid grid-cols-5 py-3 pl-4 border border-gray border-opacity-50 border-t-0 dark:text-white">
+        <div key={index} className="grid grid-cols-5 py-3 pl-4 border border-gray border-opacity-50 border-t-0 dark:text-white dark:bg-black-type1">
             <div className="text-left flex space-x-2">{item.timestamp}</div>
             <div className="text-left pl-0 sm:pl-8 lg:pl-0">{item.liquidated}</div>
             <div className="lg:text-left sm:pl-10">{item.fees}</div>
