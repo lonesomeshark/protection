@@ -33,6 +33,8 @@
       "react/react-in-jsx-scope": "off",
       "react/display-name": "off",
       "@typescript-eslint/no-var-requires": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "react-hooks/exhaustive-deps": "off",
       "no-restricted-imports": [
         "error",
         {
