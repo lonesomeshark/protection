@@ -6,6 +6,7 @@ import daiIcon from "../../assets/dai.png";
 import shield from "../../assets/shield.png";
 import { ArrowRightIcon } from "@heroicons/react/outline";
 import { Tab as ChakraTab, Tabs, TabList, TabPanel, TabPanels } from "@chakra-ui/tabs";
+import axios from "axios";
 
 // import subscribersArtifact from "@lonesomeshark/core/deployed/kovan/Subscribers.json";
 
@@ -48,6 +49,7 @@ const icons = {
     "ETH": ethIcon,
     "USDC": usdcIcon
 }
+
 function Dashboard() {
     const [isProtected, setIsProtected] = useState(false);
     const [atIndex, setAtIndex] = useState(0);
@@ -58,7 +60,6 @@ function Dashboard() {
     const [userData, setUserData] = useState<UserReserveData[]>();
     const [userPosition, setUserPosition] = useState<UserPosition>();
     const [thrshldModified, setThrshldModified] = useState(false);
-
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -88,12 +89,12 @@ function Dashboard() {
                 const userPosition = {
                     currentLiquidationThreshold: Number(
                         ethers.utils.formatEther(data.currentLiquidationThreshold)
-                      ),
-                      healthFactor: Number(ethers.utils.formatEther(data.healthFactor)),
-                      availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
-                      ltv: Number(ethers.utils.formatEther(data.ltv)),
-                      totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
-                      totalDebtETH: parseToNumber(data.totalDebtETH),
+                    ),
+                    healthFactor: Number(ethers.utils.formatEther(data.healthFactor)),
+                    availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
+                    ltv: Number(ethers.utils.formatEther(data.ltv)),
+                    totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
+                    totalDebtETH: parseToNumber(data.totalDebtETH),
                 }
                 console.log("parsed data is: ", d);
                 console.log("user position", userPosition)
@@ -106,7 +107,21 @@ function Dashboard() {
                 console.error(e)
             });
 
+
+
     }, [])
+
+    // useEffect(() => {
+    //     if(userPosition?.totalCollateralETH !== undefined) {
+    //         try {
+    //             getDollarValue("ethereum", userPosition.totalCollateralETH)?.then( res => setAssetInUSD(res.toFixed(3).toString()));
+    //         } catch(err) {
+    //             console.log(err)
+    //         }
+    //     }
+
+    // },[userPosition]);
+
     interface IDeposit {
         asset: "ETH" | string,
         assetIcon: typeof ethIcon,
@@ -228,7 +243,7 @@ function Dashboard() {
         // }
     }
 
-    const hasDecimal = (n:number) => {
+    const hasDecimal = (n: number) => {
         return (n - Math.floor(n)) !== 0;
     }
 
@@ -240,25 +255,25 @@ function Dashboard() {
             return;
         }
 
-        if(hasDecimal(Number(custmGasLimit))) {
+        if (hasDecimal(Number(custmGasLimit))) {
             // console.log("Not a whole number");
             setGasValdsnErrMsg("Not a whole number");
             return;
         }
 
-        if(Number(custmGasLimit) < 100000 || Number(custmGasLimit) > 200000) {
+        if (Number(custmGasLimit) < 100000 || Number(custmGasLimit) > 200000) {
             // console.log("Please provide gas limit 100000 - 200000");
             setGasValdsnErrMsg("Please provide gas limit 100000 - 200000");
             return;
         }
 
-        if(!isProtected) {
+        if (!isProtected) {
             setIsProtected(true);
         }
         setGasValdsnErrMsg("");
     };
 
-    
+
 
 
     const setThreshold = (
@@ -307,7 +322,7 @@ function Dashboard() {
                 <div><button className={`inline-block text-white bg-purple px-3 py-2 rounded-md`} onClick={handleFinish}>Finish & protect my assets</button></div>
                 <div className="text-red">{gasValdsnErrMsg}</div>
             </div>
-            </div>
+        </div>
     </div>);
 
     const dashboard = (
@@ -316,8 +331,8 @@ function Dashboard() {
                 <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
 
                     <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
-                        <div className="text-lg opacity-50 pb-4">Total Aave Deposits in USD</div>
-                        <div className="text-semibold text-5xl">$12</div>
+                        <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
+                        <div className="text-semibold text-5xl">{userPosition?.totalDebtETH || 0} ETH</div>
                         {!isProtected && <div className="text-red-type1">are not protected</div>}
                         {isProtected && <div className="text-green">are protected</div>}
                         {/* { isProtected && <div className="text-green">are protected</div> }   */}
@@ -328,8 +343,8 @@ function Dashboard() {
                 <div className="col-span-2">
                     <Tabs variant="enclosed" index={atIndex}>
                         <TabList>
-                            <ChakraTab onClick={() => setAtIndex(0)}>1. Set your threshold</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0}>2. Gas Limit</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. Set your threshold</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0} className="dark:text-white">2. Gas Limit</ChakraTab>
                         </TabList>
                         <TabPanels className="bg-secondary">
                             <TabPanel>{setThreshold}</TabPanel>
@@ -337,20 +352,6 @@ function Dashboard() {
                         </TabPanels>
 
                     </Tabs>
-                    {/* <Tab.Group
-                    defaultIndex={atIndex}
-                    onChange={index => {
-                        console.log(index)
-                    }}>
-                    <Tab.List className="flex">
-                        <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-t-md" : "border border-gray px-2 py-1 rounded-t-md dark:text-white"}>1. Set your threshold</Tab>
-                        <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-t-md" : "border border-gray px-2 py-1 rounded-t-md dark:text-white"}>2. Gas Limit</Tab>
-                    </Tab.List>
-                    <Tab.Panels className="bg-secondary rounded-b-md rounded-tr-md">
-                        <Tab.Panel>{setThreshold}</Tab.Panel>
-                        <Tab.Panel>{gasLimitTab}</Tab.Panel>
-                    </Tab.Panels>
-                </Tab.Group> */}
                 </div>
             </div>
             <div className="lg:flex mt-10 lg:space-x-8">
@@ -417,9 +418,8 @@ function Dashboard() {
 export default Dashboard;
 
 
-function parseToNumber(b: ethers.BigNumber, decimals = 18){
+function parseToNumber(b: ethers.BigNumber, decimals = 18) {
     const val = ethers.utils.formatUnits(b, decimals);
     const parsedVal = parseFloat(val);
     return Number(parsedVal.toFixed(3));
-
 }
