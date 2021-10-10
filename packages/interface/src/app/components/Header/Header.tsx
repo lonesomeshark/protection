@@ -18,7 +18,7 @@ type Props = {
 // function Header({ web3Modal, loadWeb3Modal, logoutOfWeb3Modal}) {
 function Header({ address, network, balance, connected, isDark, toggleTheme, connect, disconnect, openMenu }: Props) {
     return (
-        <div className="dark:bg-black bg-secondary sticky top-0">
+        <div className="dark:bg-black bg-secondary sticky top-0 z-10">
             <nav className="dark:text-white">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex justify-between items-center py-4">
@@ -55,8 +55,14 @@ function Header({ address, network, balance, connected, isDark, toggleTheme, con
                                 </Switch>
                             </div>
                         </div>
-                        <div className="md:hidden">
-                            <button onClick={openMenu}><MenuIcon height="20" /></button>   
+                        <div className="md:hidden flex items-center space-x-2">
+                            <div>
+                                {!connected && <button className="bg-purple text-white px-4 py-2 rounded-md" onClick={connect}>Connect</button>}
+                                {connected && <button className="bg-purple text-white px-4 py-2 rounded-md" onClick={disconnect}>{address}</button>}
+                            </div>
+                            <div>
+                                <button onClick={openMenu}><MenuIcon height="20" /></button>
+                            </div>
                         </div>
                     </div>
                 </div>
