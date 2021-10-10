@@ -34,6 +34,14 @@ interface UserReserveData {
     token: string,
     symbol: string
 }
+
+interface UserAccount {
+    hf: number;
+    active: boolean;
+    payback: string;
+    threshold: number;
+    collaterals: string[] //token addresses
+}
 interface UserPosition {
     totalCollateralETH: number,
     totalDebtETH: number,
@@ -58,6 +66,7 @@ function Dashboard() {
     const [userData, setUserData] = useState<UserReserveData[]>();
     const [userPosition, setUserPosition] = useState<UserPosition>();
     const [thrshldModified, setThrshldModified] = useState(false);
+    const [userAccount, setUserAccount] = useState<UserAccount>();
 
 
     // contract interaction
@@ -107,6 +116,27 @@ function Dashboard() {
             });
 
     }, [])
+
+    const getLatestUserAccount = ()=>{
+        contract["getAccount()"]()
+        .then((account) =>{
+
+            const data = {
+                hf: parseToNumber(account.hf),
+                active: account.active,
+                payback: account.payback,
+                threshold: parseToNumber(account.threshold),
+                collaterals: account.collaterals
+            }
+            console.log("user account is", {account, data})
+            setUserAccount(data)
+        })
+        .catch(console.error)
+    }
+    useEffect(()=>{
+        console.log("getting user account data")
+        getLatestUserAccount()
+    },[])
     interface IDeposit {
         asset: "ETH" | string,
         assetIcon: typeof ethIcon,
@@ -173,7 +203,8 @@ const protectMyAssets = ()=>{
         .then(
             (tx)=>{
                 console.log(tx)
-                setIsProtected(!isProtected)
+                setIsProtected(!isProtected);
+                setAtIndex(2);
 
             }
         )
@@ -182,7 +213,7 @@ const protectMyAssets = ()=>{
 
 const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
     contract
-    .approve(_token)
+    .approveAsCollateralOnlyIfAllowedInAave(_token)
     .then((tx)=>{
         console.log("transaction for allowing token: ",_token, _symbol, tx)
     })
@@ -367,10 +398,13 @@ const dashboard = (
                         <TabList>
                             <ChakraTab onClick={() => setAtIndex(0)}>1. Set your threshold</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0}>2. Gas Limit</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={[0,1].includes(atIndex)}>3. Collaterals</ChakraTab>
+
                         </TabList>
                         <TabPanels className="bg-secondary">
                             <TabPanel>{setThreshold}</TabPanel>
                             <TabPanel>{gasLimitTab}</TabPanel>
+                            <TabPanel>{collateralsTab}</TabPanel>
                         </TabPanels>
 
                     </Tabs>

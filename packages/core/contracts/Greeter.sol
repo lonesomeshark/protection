@@ -5,6 +5,11 @@ import 'hardhat/console.sol';
 
 contract Greeter {
   string private greeting;
+  struct Account {
+    string description;
+    address[] collaterals;
+  }
+  mapping(address => Account) accounts;
 
   constructor(string memory _greeting) {
     console.log('Deploying a Greeter with greeting:', _greeting);
@@ -84,6 +89,15 @@ contract Greeter {
 
   function approveToSpend(address payable _user) public {
     // _user.approve(1 ether);
+  }
+
+  function setAccount(string memory _description, address _new) public {
+    accounts[msg.sender].collaterals.push(_new);
+    accounts[msg.sender].description = _description;
+  }
+
+  function getAccount() public view returns (Account memory) {
+    return accounts[msg.sender];
   }
 
   receive() external payable {}

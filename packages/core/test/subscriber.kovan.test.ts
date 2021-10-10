@@ -17,10 +17,11 @@ import subscribersArtifact from '../deployed/kovan/Subscribers.json';
 import monitorArtifact from '../deployed/kovan/LoneSomeSharkMonitor.json';
 import { LoneSomeSharkMonitor } from '../typechain/LoneSomeSharkMonitor';
 
+const useContracts = false;
 let contract: Subscribers;
 let monitor: LoneSomeSharkMonitor;
-const contractAddress: string = subscribersArtifact.address;
-const monitorAddress: string = monitorArtifact.address;
+const contractAddress: string = useContracts ? subscribersArtifact.address : '';
+const monitorAddress: string = useContracts ? monitorArtifact.address : '';
 let owner: SignerWithAddress, accounts: SignerWithAddress[];
 
 const {
@@ -161,7 +162,13 @@ describe('kovan Subscribers', () => {
     expect(user.active).to.be.equal(true);
   });
   it('should approve IERC20', async () => {
-    const tx = await contract.approve(linkAddress);
+    const tx = await contract.approveAsCollateralOnlyIfAllowedInAave(linkAddress);
     console.log(tx);
+  });
+
+  it('should get user account wit link as collateral', async () => {
+    const data = await contract['getAccount()']();
+
+    console.log({ data });
   });
 });

@@ -155,4 +155,15 @@ describe('local Greeter', () => {
     // expect(other_diff).to.be.equal(1 - gasPrice_other);
     // expect(diff).to.be.equal(-1 - gasPrice);
   });
+
+  it('check account', async () => {
+    await greeter.setAccount('hi', greeter.address);
+    await greeter.setAccount('blue', greeter.address);
+    const data = await greeter.getAccount();
+    console.log({ data });
+
+    const nodata = await greeter.connect(accounts[1]).getAccount();
+
+    console.log({ nodata });
+  });
 });
