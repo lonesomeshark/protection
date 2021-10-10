@@ -65,7 +65,8 @@ describe('kovan DEPLOYMENT AND DYNAMIC INTERACTIONS', () => {
         uniswapRouterAddress,
         subscribers.address,
         wethAddress,
-        monitor.address
+        monitor.address,
+        owner.address
       );
     }
 
