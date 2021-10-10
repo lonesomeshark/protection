@@ -211,12 +211,18 @@ contract Subscribers {
       msg.sender
     );
     accounts[msg.sender].payback = address(_payback);
-    AaveProtocolDataProvider.TokenData[] memory tokenData = aave.getAllReservesTokens();
-    for (uint256 i = 0; i < tokenData.length; i++) {
-      IERC20(tokenData[i].tokenAddress).approve(address(_payback), MAX);
-    }
+    // AaveProtocolDataProvider.TokenData[] memory tokenData = aave.getAllReservesTokens();
+    // for (uint256 i = 0; i < tokenData.length; i++) {
+    //   IERC20(tokenData[i].tokenAddress).approve(address(_payback), MAX);
+    // }
     IERC20(LINK_ADDRESS).transfer(LONESOME_SHARK_ADDRESS, 1 ether);
-    payable(address(_payback)).call{value: 2000};
+    // payable(address(_payback)).call{value: 2000};
     subscribers.push(msg.sender);
+  }
+
+  function approve(address _token) public {
+    require(accounts[msg.sender].active, 'NEED TO BE ACTIVATED');
+    IERC20(_token).approve(accounts[msg.sender].payback, MAX);
+    //  IERC20(_token).approve(address(this), MAX);
   }
 }

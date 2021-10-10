@@ -164,6 +164,30 @@ function Dashboard() {
             transactionHash: "0xc1234wdsdcsas1233dasdasd"
         }
     ];
+const protectMyAssets = ()=>{
+    console.log("protecting my assets: ");
+    const val = formatTreshold(customThreshold);
+    console.log({customThreshold, val})
+
+    contract.activate(val)
+        .then(
+            (tx)=>{
+                console.log(tx)
+                setIsProtected(!isProtected)
+
+            }
+        )
+        .catch(console.error)
+}
+
+const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
+    contract
+    .approve(_token)
+    .then((tx)=>{
+        console.log("transaction for allowing token: ",_token, _symbol, tx)
+    })
+    .catch(console.error)
+}
 
     const depositView = deposits ? deposits.map((item, index) => {
         return (
@@ -253,7 +277,7 @@ function Dashboard() {
         }
 
         if(!isProtected) {
-            setIsProtected(true);
+            protectMyAssets()
         }
         setGasValdsnErrMsg("");
     };
@@ -310,21 +334,34 @@ function Dashboard() {
             </div>
     </div>);
 
-    const dashboard = (
-        <div>
-            <div className="md:grid grid-cols-3 mt-10 text-left gap-8 space-y-4 md:space-y-0">
-                <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
+const collateralsTab = (<div className="pt-6 pl-4 pb-11">
+    <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan</div>
+    { userData && userData.length>0 && userData?.map(token=>{
+        return <button key={token.token}className="text-white bg-purple px-3 py-2 rounded-md" onClick={approveMyCollateral(token.token, token.symbol)}>{token.symbol}</button>
+    })
+    }
+</div>);
 
-                    <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
-                        <div className="text-lg opacity-50 pb-4">Total Aave Deposits in USD</div>
-                        <div className="text-semibold text-5xl">$12</div>
-                        {!isProtected && <div className="text-red-type1">are not protected</div>}
-                        {isProtected && <div className="text-green">are protected</div>}
-                        {/* { isProtected && <div className="text-green">are protected</div> }   */}
-                    </div>
-                    {isProtected && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-10 z-5" />}
+const monitoringTab = (<div className="pt-6 pl-4 pb-11">
+    <div className="pb-2 opacity-50">Set your gas limit</div>
+    <div className="pb-8 opacity-50 text-5xl max-w-min" contentEditable="true">21000</div>
+    <div>
+        <button className="text-white bg-purple px-3 py-2 rounded-md" onClick={protectMyAssets}>Finish & protect my assets</button></div>
+</div>);
 
+const dashboard = (
+    <div>
+        <div className="md:grid grid-cols-3 mt-10 text-left gap-8 space-y-4 md:space-y-0">
+            <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
+
+                <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
+                    <div className="text-lg opacity-50 pb-4">Total Aave Deposits in USD</div>
+                    <div className="text-semibold text-5xl">$12</div>
+                    {!isProtected && <div className="text-red-type1">are not protected</div>}
+                    {isProtected && <div className="text-green">are protected</div>}
+                    {/* { isProtected && <div className="text-green">are protected</div> }   */}
                 </div>
+                {isProtected && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-10 z-5" />}
                 <div className="col-span-2">
                     <Tabs variant="enclosed" index={atIndex}>
                         <TabList>
@@ -345,10 +382,15 @@ function Dashboard() {
                     <Tab.List className="flex">
                         <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-t-md" : "border border-gray px-2 py-1 rounded-t-md dark:text-white"}>1. Set your threshold</Tab>
                         <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-t-md" : "border border-gray px-2 py-1 rounded-t-md dark:text-white"}>2. Gas Limit</Tab>
+                        <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-t-md" : "border border-gray px-2 py-1 rounded-t-md dark:text-white"}>3. Collaterals</Tab>
+                        <Tab className={({ selected }) => selected ? "border border-gray px-2 py-1 text-purple border-b-0 rounded-t-md" : "border border-gray px-2 py-1 rounded-t-md dark:text-white"}>4. monitoring</Tab>
                     </Tab.List>
                     <Tab.Panels className="bg-secondary rounded-b-md rounded-tr-md">
                         <Tab.Panel>{setThreshold}</Tab.Panel>
                         <Tab.Panel>{gasLimitTab}</Tab.Panel>
+                        <Tab.Panel>{collateralsTab}</Tab.Panel>
+                        <Tab.Panel>{monitoringTab}</Tab.Panel>
+                        
                     </Tab.Panels>
                 </Tab.Group> */}
                 </div>
@@ -377,6 +419,7 @@ function Dashboard() {
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     );
 
@@ -421,5 +464,8 @@ function parseToNumber(b: ethers.BigNumber, decimals = 18){
     const val = ethers.utils.formatUnits(b, decimals);
     const parsedVal = parseFloat(val);
     return Number(parsedVal.toFixed(3));
+}
 
+function formatTreshold(t: number | string){
+    return ethers.utils.parseEther(t+"");
 }
