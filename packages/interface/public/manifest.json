@@ -21,5 +21,6 @@
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "skylink": "AQCbNkLANXHxPCBoXcgq6rauHa81Z5h9da88rVvijXSvTA"
 }
