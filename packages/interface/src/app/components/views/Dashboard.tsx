@@ -52,9 +52,12 @@ function Dashboard() {
     const [isProtected, setIsProtected] = useState(false);
     const [atIndex, setAtIndex] = useState(0);
     const [thrshldValdsnErrMsg, setThrshldValdsnErrMsg] = useState("");
+    const [gasValdsnErrMsg, setGasValdsnErrMsg] = useState("");
     const [customThreshold, setCustomThreshold] = useState("1.01");
+    const [custmGasLimit, setCustmGasLimit] = useState("21000");
     const [userData, setUserData] = useState<UserReserveData[]>();
-    const [userPosition, setUserPosition] = useState<UserPosition>()
+    const [userPosition, setUserPosition] = useState<UserPosition>();
+    const [thrshldModified, setThrshldModified] = useState(false);
 
 
     // contract interaction
@@ -202,7 +205,7 @@ function Dashboard() {
 
     const handleNext = () => {
 
-        if(isNaN(Number(customThreshold))) {
+        if (isNaN(Number(customThreshold))) {
             // console.log("Not a number. Please enter a number.");
             setThrshldValdsnErrMsg("Not a number. Please enter a number.");
             return;
@@ -210,24 +213,57 @@ function Dashboard() {
 
         const val = Number(customThreshold);
 
-        if( val < 1.01 || val > 1.1) {
+        if (val < 1.01 || val > 1.1) {
             // console.log("Out of acceptable range. Please provide threshold value between 1.01 and 1.1");
             setThrshldValdsnErrMsg("Out of acceptable range. Please provide threshold value between 1.01 and 1.1");
             return;
         }
 
-        console.log("Entered threshold value ",customThreshold);
+        console.log("Entered threshold value ", customThreshold);
         setThrshldValdsnErrMsg("");
+        setThrshldModified(true);
         setAtIndex(1);
+        // if(isProtected) {
+        //     setIsProtected(!isProtected);
+        // }
     }
 
-    const handleThresholdChange = (e:any) => {
-        console.log(e);
+    const hasDecimal = (n:number) => {
+        return (n - Math.floor(n)) !== 0;
     }
+
+    const handleFinish = () => {
+        //if all conditions met
+        if (isNaN(Number(custmGasLimit))) {
+            // console.log("Not a number. Please enter a number.");
+            setGasValdsnErrMsg("Not a number. Please enter a number.");
+            return;
+        }
+
+        if(hasDecimal(Number(custmGasLimit))) {
+            // console.log("Not a whole number");
+            setGasValdsnErrMsg("Not a whole number");
+            return;
+        }
+
+        if(Number(custmGasLimit) < 100000 || Number(custmGasLimit) > 200000) {
+            // console.log("Please provide gas limit 100000 - 200000");
+            setGasValdsnErrMsg("Please provide gas limit 100000 - 200000");
+            return;
+        }
+
+        if(!isProtected) {
+            setIsProtected(true);
+        }
+        setGasValdsnErrMsg("");
+    };
+
+    
+
 
     const setThreshold = (
         <div className="setThreshold-panel space-y-4">
-            <div className="flex justify-between px-10 pt-2 pb-2 items-center">
+            <div className="flex justify-between px-10 items-center">
                 <div className="space-y-2">
                     <div className="opacity-50 text-lg">Current Health Factor</div>
                     <div className="text-5xl text-center">1.2</div>
@@ -246,7 +282,7 @@ function Dashboard() {
                     </div>
                 </div>
             </div>
-            <div className="flex justify-center pb-4">
+            <div className="flex justify-center pb-3">
                 <div className="bg-purple flex rounded-md px-3 py-2 space-x-2">
                     <div><button className="text-white bg-purple  rounded-md" onClick={handleNext}> Next</button></div>
                     <div className="text-white flex items-center"><ArrowRightIcon height="20" /></div>
@@ -260,11 +296,18 @@ function Dashboard() {
             <p className="text-red text-center">{thrshldValdsnErrMsg}</p>
         </div>);
 
-    const gasLimitTab = (<div className="pt-6 pl-4 pb-11">
+    const gasLimitTab = (<div className="pl-4 pb-8">
         <div className="pb-2 opacity-50">Set your gas limit</div>
-        <div className="pb-8 opacity-50 text-5xl max-w-min" contentEditable="true">21000</div>
+        {/* <div className="pb-8 opacity-50 text-5xl max-w-min" contentEditable="true">21000</div> */}
+        <div className="pb-4 opacity-50 text-5xl max-w-min">
+            <input name="gasLimit" value={custmGasLimit} onChange={(e) => setCustmGasLimit(e.target.value)} className="w-72" />
+        </div>
         <div>
-            <button className="text-white bg-purple px-3 py-2 rounded-md" onClick={() => setIsProtected(!isProtected)}>Finish & protect my assets</button></div>
+            <div className="flex items-center space-x-4">
+                <div><button className={`inline-block text-white bg-purple px-3 py-2 rounded-md`} onClick={handleFinish}>Finish & protect my assets</button></div>
+                <div className="text-red">{gasValdsnErrMsg}</div>
+            </div>
+            </div>
     </div>);
 
     const dashboard = (
