@@ -88,12 +88,12 @@ function Dashboard() {
                 const userPosition = {
                     currentLiquidationThreshold: Number(
                         ethers.utils.formatEther(data.currentLiquidationThreshold)
-                    ),
-                    healthFactor: Number(ethers.utils.formatEther(data.healthFactor)),
-                    availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
-                    ltv: Number(ethers.utils.formatEther(data.ltv)),
-                    totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
-                    totalDebtETH: Number(ethers.utils.formatEther(data.totalDebtETH)),
+                      ),
+                      healthFactor: Number(ethers.utils.formatEther(data.healthFactor)),
+                      availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
+                      ltv: Number(ethers.utils.formatEther(data.ltv)),
+                      totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
+                      totalDebtETH: parseToNumber(data.totalDebtETH),
                 }
                 console.log("parsed data is: ", d);
                 console.log("user position", userPosition)
@@ -415,3 +415,11 @@ function Dashboard() {
 }
 
 export default Dashboard;
+
+
+function parseToNumber(b: ethers.BigNumber, decimals = 18){
+    const val = ethers.utils.formatUnits(b, decimals);
+    const parsedVal = parseFloat(val);
+    return Number(parsedVal.toFixed(3));
+
+}
