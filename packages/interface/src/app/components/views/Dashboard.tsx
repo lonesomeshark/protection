@@ -50,34 +50,6 @@ const icons = {
     "USDC": usdcIcon
 }
 
-interface GeckoETHData {
-    ethereum: {
-        usd: string
-    }
-}
-
-const getPrice = async (symbol: string) => {
-    try {
-        return axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${symbol}&vs_currencies=usd`).then(res => {
-            const d: GeckoETHData = res.data;
-            return d.ethereum.usd;
-        })
-    } catch (err) {
-        console.log(err)
-    }
-}
-
-const getDollarValue = (symbol: string, value: number) => {
-    if (value === undefined) return;
-    try {
-        return getPrice(symbol).then(res => {
-            return value * (Number(res));
-        })
-    } catch (err) {
-        console.log(err)
-    }
-}
-
 function Dashboard() {
     const [isProtected, setIsProtected] = useState(false);
     const [atIndex, setAtIndex] = useState(0);
@@ -88,8 +60,6 @@ function Dashboard() {
     const [userData, setUserData] = useState<UserReserveData[]>();
     const [userPosition, setUserPosition] = useState<UserPosition>();
     const [thrshldModified, setThrshldModified] = useState(false);
-    const [assetInUSD, setAssetInUSD] = useState("0");
-
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -141,16 +111,16 @@ function Dashboard() {
 
     }, [])
 
-    useEffect(() => {
-        if(userPosition?.totalCollateralETH !== undefined) {
-            try {
-                getDollarValue("ethereum", userPosition.totalCollateralETH)?.then( res => setAssetInUSD(res.toFixed(3).toString()));
-            } catch(err) {
-                console.log(err)
-            }
-        }
+    // useEffect(() => {
+    //     if(userPosition?.totalCollateralETH !== undefined) {
+    //         try {
+    //             getDollarValue("ethereum", userPosition.totalCollateralETH)?.then( res => setAssetInUSD(res.toFixed(3).toString()));
+    //         } catch(err) {
+    //             console.log(err)
+    //         }
+    //     }
 
-    },[userPosition]);
+    // },[userPosition]);
 
     interface IDeposit {
         asset: "ETH" | string,
@@ -361,9 +331,8 @@ function Dashboard() {
                 <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
 
                     <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
-                        <div className="text-lg opacity-50 pb-4">Total Aave Deposits in USD</div>
-                        {/* <div className="text-semibold text-5xl">$ {getDollarValue("ethereum", userPosition?.totalCollateralETH as number)}</div> */}
-                        <div className="text-semibold text-5xl">${assetInUSD}</div>
+                        <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
+                        <div className="text-semibold text-5xl">{userPosition?.totalDebtETH || 0} ETH</div>
                         {!isProtected && <div className="text-red-type1">are not protected</div>}
                         {isProtected && <div className="text-green">are protected</div>}
                         {/* { isProtected && <div className="text-green">are protected</div> }   */}
@@ -374,8 +343,8 @@ function Dashboard() {
                 <div className="col-span-2">
                     <Tabs variant="enclosed" index={atIndex}>
                         <TabList>
-                            <ChakraTab onClick={() => setAtIndex(0)}>1. Set your threshold</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0}>2. Gas Limit</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. Set your threshold</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0} className="dark:text-white">2. Gas Limit</ChakraTab>
                         </TabList>
                         <TabPanels className="bg-secondary">
                             <TabPanel>{setThreshold}</TabPanel>
