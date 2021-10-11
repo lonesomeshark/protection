@@ -83,7 +83,38 @@ const icons = {
     "UNI": ethIcon ,
     "AMPL": ethIcon,
 }
+interface IDeposit {
+    asset: "ETH" | string,
+    assetIcon: typeof ethIcon,
+    value: string,
+    apy: string
+}
 
+interface IDebt {
+    asset: "ETH" | string,
+    assetIcon: typeof ethIcon,
+    value: string,
+    interest: string
+}
+
+const filterDeposit = (d: UserReserveData) => d.currentATokenBalance;
+
+const filterDebt = (d: UserReserveData) => d.currentVariableDebt;
+const parseDebt = (d: UserReserveData): IDebt => ({
+    asset: d.symbol,
+    assetIcon: (icons as any)[d.symbol] || ethIcon,
+    value: (d.currentVariableDebt).toFixed(3) + "",
+    interest: (d.liquidityRate/10000000).toFixed(3) + "%"
+}) 
+
+
+
+const parseDeposit = (d: UserReserveData): IDeposit => ({
+    asset: d.symbol,
+    assetIcon: (icons as any)[d.symbol] || ethIcon,
+    value: (d.currentATokenBalance).toFixed(3) + "",
+    apy: (d.liquidityRate/10000000).toFixed(3) + "%"
+})
 function Dashboard() {
     const [isProtected, setIsProtected] = useState(false);
     const [atIndex, setAtIndex] = useState(0);
@@ -125,7 +156,7 @@ function Dashboard() {
                     currentLiquidationThreshold: Number(
                         ethers.utils.formatEther(data.currentLiquidationThreshold)
                     ),
-                    healthFactor: Number(ethers.utils.formatEther(data.healthFactor)),
+                    healthFactor: Number(Number(ethers.utils.formatEther(data.healthFactor)).toFixed(5)),
                     availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
                     ltv: Number(ethers.utils.formatEther(data.ltv)),
                     totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
@@ -134,16 +165,13 @@ function Dashboard() {
                 console.log("parsed data is: ", d);
                 console.log("user position", userPosition)
                 setUserData(d);
-                setUserPosition(userPosition)
-
+                setUserPosition(userPosition);
+                
             })
             .catch(e => {
                 console.log("error getting getUserData")
                 console.error(e)
             });
-
-
-
     }, [])
 
     const getLatestUserAccount = ()=>{
@@ -159,6 +187,9 @@ function Dashboard() {
             }
             console.log("user account is", {account, data})
             setUserAccount(data)
+            if(data.threshold>0){
+                setCustomThreshold(data.threshold+"");
+            } 
         })
         .catch(console.error)
     }
@@ -166,38 +197,8 @@ function Dashboard() {
         console.log("getting user account data")
         getLatestUserAccount()
     },[])
-    interface IDeposit {
-        asset: "ETH" | string,
-        assetIcon: typeof ethIcon,
-        value: string,
-        apy: string
-    }
-
-    interface IDebt {
-        asset: "ETH" | string,
-        assetIcon: typeof ethIcon,
-        value: string,
-        interest: string
-    }
-
-    const filterDeposit = (d: UserReserveData) => d.currentATokenBalance;
-
-    const filterDebt = (d: UserReserveData) => d.currentVariableDebt;
-    const parseDebt = (d: UserReserveData): IDebt => ({
-        asset: d.symbol,
-        assetIcon: (icons as any)[d.symbol] || ethIcon,
-        value: (d.currentVariableDebt).toFixed(3) + "",
-        interest: (d.liquidityRate/10000000).toFixed(3) + "%"
-    }) 
 
 
-    // might need to update it
-    const parseDeposit = (d: UserReserveData): IDeposit => ({
-        asset: d.symbol,
-        assetIcon: (icons as any)[d.symbol] || ethIcon,
-        value: (d.currentATokenBalance).toFixed(3) + "",
-        apy: (d.liquidityRate/10000000).toFixed(3) + "%"
-    })
 
     const deposits = userData && userData.length > 0
         ? userData?.filter(filterDeposit).map(parseDeposit)
@@ -369,7 +370,7 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
             <div className="flex justify-between px-10 items-center">
                 <div className="space-y-2">
                     <div className="opacity-50 text-lg">Current Health Factor</div>
-                    <div className="text-5xl text-center">1.2</div>
+                    <div className="text-5xl text-center">{userPosition?.healthFactor}</div>
                 </div>
                 <div className="lg:pl-20 pl-10">
                     <svg width="52" height="24" viewBox="0 0 52 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -449,7 +450,7 @@ const dashboard = (
                         <TabList>
                             <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. Set your threshold</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0} className="dark:text-white">2. Gas Limit</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={[0,1].includes(atIndex)} className="dark:text-white">3. Collaterals</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">3. Collaterals</ChakraTab>
 
                         </TabList>
                         <TabPanels className="bg-secondary">
