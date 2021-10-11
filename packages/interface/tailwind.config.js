@@ -8,21 +8,31 @@ module.exports = {
     colors: {
       transparent: 'transparent',
       primary: '#FFFFFF',
-      secondary: '#EBEBEB',
+      secondary: '#F8F9FA',
       green: {
         DEFAULT: '#34D399',
       },
       red: {
         DEFAULT: '#FF0000',
+        type1: '#DC3545',
       },
       black: {
         DEFAULT: '#000000',
+        type1: '#292825',
       },
       white: {
         DEFAULT: '#FFFFFF',
       },
       yellow: {
         DEFAULT: '#FFB01F',
+      },
+      purple: {
+        DEFAULT: '#7749F8',
+      },
+      gray: {
+        DEFAULT: '#DEE2E6',
+        type1: '#8C8C8C',
+
       }
 
     },

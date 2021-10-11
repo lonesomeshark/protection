@@ -9,7 +9,7 @@ import { createAction, createReducer, createSlice, PayloadAction } from "@reduxj
 // })
 const slice = createSlice({
     "name": "theme",
-    "initialState": true,
+    "initialState": false,
     "reducers": {
         setIsDark(state, action: PayloadAction<boolean>){
             return action.payload;

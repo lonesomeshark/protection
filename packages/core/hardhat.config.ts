@@ -5,6 +5,8 @@ import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
 import dotenv from 'dotenv';
 import '@nomiclabs/hardhat-etherscan';
+import 'solidity-coverage';
+import '@nomiclabs/hardhat-ethers';
 import 'hardhat-gas-reporter';
 
 const envPath = process.env.ENV_PATH ? { path: process.env.ENV_PATH } : {};
@@ -20,13 +22,36 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
 });
 
 const config: HardhatUserConfig = {
+  // namedAccounts: {
+  //   deployer: 0,
+  //   participant1: 1,
+  //   participant2: 2,
+  //   participant3: 3,
+  //   simpleERC20Beneficiary: 4,
+  // },
   solidity: {
     compilers: [
       { version: '0.8.7' },
       { version: '0.8.4' },
-      { version: '0.6.12' },
+      { version: '0.7.0' },
+      { version: '0.7.4' },
+      {
+        version: '0.6.12',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          },
+        },
+      },
       { version: '0.6.6' },
     ],
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      },
+    },
   },
   networks: {
     local: {
@@ -57,6 +82,7 @@ const config: HardhatUserConfig = {
   },
   mocha: {
     grep: process.env.ENV_TEST ? process.env.ENV_TEST : '',
+    timeout: 0,
   },
 };
 

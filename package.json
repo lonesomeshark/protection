@@ -10,16 +10,29 @@
   },
   "scripts": {
     "start": "yarn compile && yarn start:interface",
+    "build": "yarn compile && yarn build:interface",
+    "build:interface": "yarn workspace @lonesomeshark/interface build",
     "start:interface": "yarn workspace @lonesomeshark/interface start",
-    "test": "yarn test:core",
+    "test": "yarn test:core && yarn test:interface",
+    "deploy:core": "yarn workspace @lonesomeshark/core deploy",
+    "test:local": "yarn test:local:core",
     "test:interface": "yarn workspace @lonesomeshark/interface test",
     "test:core": "yarn workspace @lonesomeshark/core test",
     "test:local:core": "yarn workspace @lonesomeshark/core test:local",
-    "lint": "yarn lint:interface && yarn lint:core",
+    "lint:fix": "yarn lint:interface && yarn lint:fix:core",
+    "lint:fix:interface": "yarn workspace @lonesomeshark/interface lint:fix",
     "lint:interface": "yarn workspace @lonesomeshark/interface lint",
     "lint:core": "yarn workspace @lonesomeshark/core lint",
+    "lint:fix:core": "yarn workspace @lonesomeshark/core lint:fix",
+    "format:fix": "yarn format:fix:core",
+    "format": "yarn format:core",
+    "format:fix:interface": "yarn workspace @lonesomeshark/interface format",
+    "format:fix:core": "yarn workspace @lonesomeshark/core format:fix",
+    "format:interface": "yarn workspace @lonesomeshark/interface format",
+    "format:core": "yarn workspace @lonesomeshark/core format",
     "compile": "yarn workspace @lonesomeshark/core hardhat compile",
-    "clean": "rm -rf */**/yarn* node_modules */**//node_modules"
+    "clean": "rm -rf */**/yarn* node_modules */**//node_modules && yarn compile",
+    "deploy:interface": "yarn build && yarn workspace @lonesomeshark/interface deploy"
   },
   "devDependencies": {
     "husky": "^7.0.2"
