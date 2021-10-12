@@ -16,6 +16,7 @@ import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface,
 import ierc20Artifact from "@lonesomeshark/core/artifacts/@aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol/IERC20.json"
 import registryArtifact from "@lonesomeshark/core/artifacts/contracts/interfaces/KeeperRegistryInterface.sol/KeeperRegistryBaseInterface.json"
 
+import useAssets from "../../../hooks/assets"
 
 const getContract = (contract: "LoneSomeSharkMonitor" | "Subscribers", network: 'kovan') => {
     const s = require(`@lonesomeshark/core/deployed/${network}/${contract}.json`);
@@ -62,7 +63,7 @@ const linkAddress = "0xa36085F69e2889c224210F603D836748e7dC0088";
 
 const subscribers = getContract("Subscribers","kovan");
 const lonesomeshark = getContract("LoneSomeSharkMonitor","kovan"); 
-const icons = {
+let icons: any = {
     "ETH": ethIcon,
     "USDC": usdcIcon,
     "AAVE": ethIcon,
@@ -87,6 +88,14 @@ const icons = {
     "UNI": ethIcon ,
     "AMPL": ethIcon,
 }
+icons = Object.keys(icons).reduce((a,b)=>{
+    try{
+        (a as any)[b]=require("../../assets/"+b+".svg")
+    } catch(e){
+        (a as any)[b]=(icons as any)[b];
+    }
+    return a
+},{});
 interface IDeposit {
     asset: "ETH" | string,
     assetIcon: typeof ethIcon,
@@ -219,7 +228,7 @@ function Dashboard() {
         }
  
     },[userAccount?.payback])
-
+    const iconic = useAssets();
     const getLatestUserAccount = (seconds=0)=>{
         console.log("getAccount()")
         setTimeout(()=>{
