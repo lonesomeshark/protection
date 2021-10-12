@@ -21,3 +21,6 @@ yarn-error.log
 
 # flatten
 out
+
+#test
+test/sample*

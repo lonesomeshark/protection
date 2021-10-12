@@ -25,8 +25,19 @@ contract Payer {
     return IERC20(LINK_ADDRESS).balanceOf(_account);
   }
 
+  function getMyBalance() public view returns (uint256) {
+    return address(this).balance;
+  }
+
   function transfer(address _recipient) public {
     IERC20(LINK_ADDRESS).approve(address(this), 1 ether);
     IERC20(LINK_ADDRESS).transfer(_recipient, 1 ether);
+  }
+
+  receive() external payable {}
+
+  function payEth(address payable _to) public payable {
+    // _to.call{value: msg.value};
+    _to.transfer(msg.value);
   }
 }

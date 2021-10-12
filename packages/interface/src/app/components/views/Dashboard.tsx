@@ -8,11 +8,10 @@ import linkIcon from "../../assets/link.svg";
 import inchIcon from "../../assets/1INCH.svg";
 import wbtcIcon from "../../assets/WBTC.svg";
 import shield from "../../assets/shield.png";
-import { ArrowRightIcon } from "@heroicons/react/outline";
 import { Tab as ChakraTab, Tabs, TabList, TabPanel, TabPanels } from "@chakra-ui/tabs";
 
 import { ethers } from "ethers";
-import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface  } from '@lonesomeshark/core/typechain';
+import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface, PaybackLoan  } from '@lonesomeshark/core/typechain';
 
 import ierc20Artifact from "@lonesomeshark/core/artifacts/@aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol/IERC20.json"
 import registryArtifact from "@lonesomeshark/core/artifacts/contracts/interfaces/KeeperRegistryInterface.sol/KeeperRegistryBaseInterface.json"
@@ -121,7 +120,6 @@ const parseDeposit = (d: IUserReserveData): IDeposit => ({
 })
 
 function Dashboard() {
-    const [isProtected, setIsProtected] = useState(false);
     const [atIndex, setAtIndex] = useState(0);
     const [thrshldValdsnErrMsg, setThrshldValdsnErrMsg] = useState("");
     const [gasValdsnErrMsg, setGasValdsnErrMsg] = useState("");
@@ -177,30 +175,69 @@ function Dashboard() {
                 console.log("error getting getUserData")
                 console.error(e)
             });
-    }, [userAccount?.collaterals])
+    }, [userAccount?.collaterals.length])
 
-    const getLatestUserAccount = ()=>{
-        contract["getAccount()"]()
-        .then((account) =>{
-
-            const data = {
-                status: account.status,
-                payback: account.payback == "0x0000000000000000000000000000000000000000" ? "" : account.payback,
-                threshold: parseToNumber(account.threshold),
-                collaterals: account.collaterals
-            }
-            console.log("user account is", {account, data})
-            setUserAccount(data)
-            if(data.threshold>0){
-                setCustomThreshold(data.threshold+"");
-            } 
-        })
-        .catch(console.error)
-    }
     useEffect(()=>{
-        console.log("getting user account data")
+        const accountInterval = setInterval(() => getLatestUserAccount(), 30*1000); 
         getLatestUserAccount()
+        return function(){
+            clearInterval(accountInterval)
+        }
     },[])
+    useEffect(() => {
+        if (isNaN(Number(customThreshold))) {
+            // console.log("Not a number. Please enter a number.");
+            setThrshldValdsnErrMsg("Not a number. Please enter a number.");
+            return;
+        }
+
+        const val = Number(customThreshold);
+
+        if (val < 1.01 || val > 1.1) {
+            // console.log("Out of acceptable range. Please provide threshold value between 1.01 and 1.1");
+            setThrshldValdsnErrMsg("Out of acceptable range. Please provide threshold value between 1.01 and 1.1");
+            return;
+        }
+
+        console.log("Entered threshold value ", customThreshold);
+        setThrshldValdsnErrMsg("");
+    },[customThreshold])
+    useEffect(()=>{
+        if(userAccount?.payback){
+            // const payback = (new ethers.Contract(userAccount?.payback, paybackArtifact.abi, signer)) as PaybackLoan;
+            provider.getBalance(userAccount.payback)
+            .then((balance)=>{
+                console.log("balance of payback contract: ", ethers.utils.formatEther(balance))
+
+            })
+            .catch(console.error)
+        }
+ 
+    },[userAccount?.payback])
+
+    const getLatestUserAccount = (seconds=0)=>{
+        console.log("getAccount()")
+        setTimeout(()=>{
+            contract["getAccount()"]()
+            .then((account) =>{
+                const data = {
+                    status: account.status,
+                    payback: account.payback == "0x0000000000000000000000000000000000000000" ? "" : account.payback,
+                    threshold: parseToNumber(account.threshold),
+                    collaterals: account.collaterals
+                }
+                console.log("user account is", {account, data})
+                if(JSON.stringify(userAccount) != JSON.stringify(data)){
+                    setUserAccount(data)
+                }
+                if(data.threshold+"" != customThreshold &&  data.threshold > 0){
+                    setCustomThreshold(data.threshold+"");
+                } 
+            })
+            .catch(console.error)
+        },seconds *1000);
+    }
+   
 
 
 
@@ -245,33 +282,31 @@ function Dashboard() {
             transactionHash: "0xc1234wdsdcsas1233dasdasd"
         }
     ];
-const protectMyAssets = ()=>{
-    console.log("protecting my assets: ");
-    const val = formatTreshold(customThreshold);
-    console.log({customThreshold, val})
+    const protectMyAssets = ()=>{
+        console.log("protecting my assets: ");
+        const val = formatTreshold(customThreshold);
+        console.log({customThreshold, custmGasLimit});
+        contract.registerHF(val,{ value: custmGasLimit})
+            .then(
+                async (tx) =>{
+                    console.log("sign up wiht us transaction: ",tx)
+                    await tx.wait();
+                    setAtIndex(1);
+                    getLatestUserAccount();
+                }
+            )
+            .catch(console.error)
+    }
 
-    contract.registerHF(val)
-        .then(
-            (tx)=>{
-                console.log(tx)
-                setIsProtected(!isProtected);
-                setAtIndex(2);
-                getLatestUserAccount();
-
-            }
-        )
+    const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
+        contract
+        .approveAsCollateralOnlyIfAllowedInAave(_token)
+        .then((tx)=>{
+            console.log("transaction for allowing token: ",_token, _symbol, tx);
+            getLatestUserAccount(0.3);
+        })
         .catch(console.error)
-}
-
-const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
-    contract
-    .approveAsCollateralOnlyIfAllowedInAave(_token)
-    .then((tx)=>{
-        console.log("transaction for allowing token: ",_token, _symbol, tx);
-        getLatestUserAccount();
-    })
-    .catch(console.error)
-}
+    }
 
     const depositView = deposits ? deposits.map((item, index) => {
         return (
@@ -311,27 +346,7 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
         )
     }) : null;
 
-    const handleNext = () => {
-
-        if (isNaN(Number(customThreshold))) {
-            // console.log("Not a number. Please enter a number.");
-            setThrshldValdsnErrMsg("Not a number. Please enter a number.");
-            return;
-        }
-
-        const val = Number(customThreshold);
-
-        if (val < 1.01 || val > 1.1) {
-            // console.log("Out of acceptable range. Please provide threshold value between 1.01 and 1.1");
-            setThrshldValdsnErrMsg("Out of acceptable range. Please provide threshold value between 1.01 and 1.1");
-            return;
-        }
-
-        console.log("Entered threshold value ", customThreshold);
-        setThrshldValdsnErrMsg("");
-        setAtIndex(1);
-    }
-
+ 
     const hasDecimal = (n: number) => {
         return (n - Math.floor(n)) !== 0;
     }
@@ -356,9 +371,7 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
             return;
         }
 
-        if(!isProtected) {
-            protectMyAssets()
-        }
+        protectMyAssets()
         setGasValdsnErrMsg("");
     };
 
@@ -370,16 +383,18 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
         if(userAccount?.status != EStatus.ACTIVATED){
             linkToken
             .approve(registryAddress, ethers.utils.parseEther("1.0"))
-            .then((tx)=>{
+            .then(async (tx)=>{
                 console.log("transaction from approving link", tx);
+                await tx.wait()
                 const registryContract = (new ethers.Contract(registryAddress, registryArtifact.abi, signer)) as KeeperRegistryBaseInterface
                 registryContract.addFunds(id, ethers.utils.parseEther("1.0"))
-                .then((tx)=>{
+                .then(async (tx)=>{
                     console.log("added funds to registry", tx);
                     contract
                     .startMonitoring()
-                    .then((tx)=>{
+                    .then(async(tx)=>{
                         console.log("monitoring started, ", tx);
+                        await tx.wait()
                         getLatestUserAccount()
                     })
                 })
@@ -392,12 +407,14 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
     const pauseMonitoring = async () =>{
         console.log("pause monitoring");
         contract.pauseMonitoring()
-        .then((tx)=>{
+        .then(async (tx)=>{
             console.log("tx pause monitoring", tx)
+            await tx.wait();
             getLatestUserAccount()
         })
         .catch(console.error)
     }
+
 
     const setThreshold = (
         <div className="setThreshold-panel space-y-4">
@@ -420,39 +437,50 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
                     </div>
                 </div>
             </div>
-            <div className="flex justify-center pb-3">
-                <div className="bg-purple flex rounded-md px-3 py-2 space-x-2">
-                    <div><button className="text-white bg-purple  rounded-md" onClick={handleNext}> Next</button></div>
-                    <div className="text-white flex items-center"><ArrowRightIcon height="20" /></div>
-                </div>
-                {/* {isProtected &&
-                <div className="flex space-x-4">
-                    <button className="text-white bg-purple px-3 py-2 rounded-md" onClick={() => setIsProtected(!isProtected)}>Edit</button>
-                    <button className="text-red-type1 border border-red-type1 px-3 py-3 rounded-md">Expose assets to risk</button>
-                </div>} */}
-            </div>
             <p className="text-red text-center">{thrshldValdsnErrMsg}</p>
         </div>);
 
-    const gasLimitTab = (<div className="pl-4 pb-8">
-        <div className="pb-2 opacity-50">Set your gas limit</div>
-        {/* <div className="pb-8 opacity-50 text-5xl max-w-min" contentEditable="true">21000</div> */}
-        <div className="pb-4 opacity-50 text-5xl max-w-min">
-            <input name="gasLimit" value={custmGasLimit} onChange={(e) => setCustmGasLimit(e.target.value)} className="w-72" />
-        </div>
-        <div>
-            <div className="flex items-center space-x-4">
-                <div><button className={`inline-block text-white bg-purple px-3 py-2 rounded-md`} onClick={handleFinish}>Finish & protect my assets</button></div>
-                <div className="text-red">{gasValdsnErrMsg}</div>
+    const registerWithUsTab = (
+        <>
+            {setThreshold}
+            <div className="pl-4 pb-8">
+                <div className="pb-2 opacity-50">Set your gas limit for the flash loan contract</div>
+                <div className="pb-4 opacity-50 text-5xl max-w-min">
+                    <input name="gasLimit" value={custmGasLimit} onChange={(e) => setCustmGasLimit(e.target.value)} className="w-72" />
+                </div>
+                    { userAccount && !userAccount?.payback &&
+                        <div>
+                            <div className="flex items-center space-x-4">
+                                <div><button className={`inline-block text-white bg-purple px-3 py-2 rounded-md`} onClick={handleFinish}>Sign Up</button></div>
+                                <div className="text-red">{gasValdsnErrMsg}</div>
+                            </div>
+                        </div>
+                    }
             </div>
-        </div>
-    </div>);
+        </>
+    );
 
-const collateralsTab = (<div className="pt-6 pl-4 pb-8 space-x-2 space-y-2">
-    <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan</div>
+const collateralsTab = (<div key={userAccount?.collaterals.length} className="pt-6 pl-4 pb-8 space-x-2 space-y-2">
+    <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan and start monitoring your health ❤️</div>
     { userData && userData.length>0 && userData?.map(token=>{
-        return <button key={token.token} className={` px-3 py-2 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'bg-green cursor-default opacity-50 text-gray' : 'text-white bg-purple'}`} onClick={approveMyCollateral(token.token, token.symbol)} disabled={userAccount?.collaterals.includes(token.token)}>{token.symbol}</button>
+        return <button 
+        key={token.token+""+ userAccount?.collaterals.length} 
+        className={` px-3 py-2 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'bg-green cursor-default opacity-50 text-gray' : 'text-white bg-purple'}`} 
+        onClick={approveMyCollateral(token.token, token.symbol)} 
+        disabled={userAccount?.collaterals.includes(token.token)}>{token.symbol}</button>
     })
+    }
+    { userAccount && userAccount.collaterals.length >= 1 && (
+        <div 
+        className="p-2 m-1"
+        >
+        <button
+        className={` px-3 py-2 rounded-md text-white bg-purple`} 
+        >
+            NEXT
+        </button>
+        </div>
+        )
     }
 </div>);
 
@@ -478,26 +506,25 @@ const dashboard = (
                 <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
                     <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
                     <div className="text-semibold text-5xl">{userPosition?.totalDebtETH || 0} ETH</div>
-                    {!isProtected && <div className="text-red-type1">are not protected</div>}
-                    {isProtected && <div className="text-green">are protected</div>}
-                    {/* { isProtected && <div className="text-green">are protected</div> }   */}
+                    {userAccount && userAccount.status == EStatus.ACTIVATED
+                        ? <div className="text-green">are protected</div>
+                        : <div className="text-red-type1">are not protected</div>
+                    }
                 </div>
-                {isProtected && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-10 z-5" />}
+                { userAccount && userAccount.status == EStatus.ACTIVATED && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-10 z-5" />}
                 
             </div>
 
             <div className="col-span-2">
                     <Tabs variant="enclosed" index={atIndex}>
                         <TabList>
-                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. Set your threshold</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0} className="dark:text-white">2. Gas Limit</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">3. Collaterals</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(3)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">4. Monitoring</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. {userAccount && userAccount?.payback? `Add more gas or update HF Treshold: ${userAccount.threshold}?`: "Register with us"}</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(1)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">2. Collaterals ( {userAccount?.collaterals.length} )</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount && userAccount?.collaterals.length >= 1 ? false : true} className="dark:text-white">3. Monitoring</ChakraTab>
 
                         </TabList>
                         <TabPanels className="bg-secondary">
-                            <TabPanel>{setThreshold}</TabPanel>
-                            <TabPanel>{gasLimitTab}</TabPanel>
+                            <TabPanel>{registerWithUsTab}</TabPanel>
                             <TabPanel>{collateralsTab}</TabPanel>
                             <TabPanel>{monitoringTab}</TabPanel>
                         </TabPanels>
