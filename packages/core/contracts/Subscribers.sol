@@ -230,7 +230,7 @@ contract Subscribers {
     accounts[msg.sender].threshold = _threshold;
   }
 
-  function registerHF(uint256 _threshold) public checkHF(_threshold) hasNoAccount {
+  function registerHF(uint256 _threshold) public payable checkHF(_threshold) hasNoAccount {
     accounts[msg.sender].status = Status.REGISTERED;
     accounts[msg.sender].threshold = _threshold;
     subscribers.push(msg.sender);
@@ -243,6 +243,11 @@ contract Subscribers {
       msg.sender
     );
     accounts[msg.sender].payback = address(_payback);
+    payable(accounts[msg.sender].payback).call{value: msg.value};
+  }
+
+  function addMoreGas() public payable hasAccount {
+    payable(accounts[msg.sender].payback).call{value: msg.value};
   }
 
   function approveAsCollateralOnlyIfAllowedInAave(address _token) public {
