@@ -132,6 +132,8 @@ function Dashboard() {
     const [userAccount, setUserAccount] = useState<IUserAccount>();
     const [isValidUser, setIsValidUser] = useState(false);
     const [displayLoader, setDisplayLoader] = useState(true);
+    const [progressVal, setProgressVal] = useState(0);
+    const [isMonitoring, setIsMonitoring] = useState(false);
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -411,6 +413,7 @@ function Dashboard() {
 
 
     const startMonitoring = async () => {
+        setIsMonitoring(true);
         const registryAddress = await shark.getRegistry();
         const id = await shark.getRegistryID();
         if (userAccount?.status != EStatus.ACTIVATED) {
@@ -419,21 +422,31 @@ function Dashboard() {
                 .then(async (tx) => {
                     console.log("transaction from approving link", tx);
                     await tx.wait()
+                    setProgressVal(33);
                     const registryContract = (new ethers.Contract(registryAddress, registryArtifact.abi, signer)) as KeeperRegistryBaseInterface
                     registryContract.addFunds(id, ethers.utils.parseEther("1.0"))
                         .then(async (tx) => {
                             console.log("added funds to registry", tx);
+                            setProgressVal(66);
                             contract
                                 .startMonitoring()
                                 .then(async (tx) => {
                                     console.log("monitoring started, ", tx);
                                     await tx.wait()
+                                    setProgressVal(100);
+                                    setIsMonitoring(false);
                                     getLatestUserAccount()
                                 })
                         })
-                        .catch(console.error)
+                        .catch(e => {
+                            console.error;
+                            setIsMonitoring(false);
+                        })
                 })
-                .catch(console.error);
+                .catch(e => {
+                    console.error;
+                    setIsMonitoring(false);
+                });
         }
     }
 
@@ -558,8 +571,12 @@ function Dashboard() {
     </div>);
 
     const monitoringTab = (
-        <div className="pt-6 pl-4 pb-11">
+        <div className="pl-4 pb-11">
             <div className="pb-2 opacity-50">Send 1 LINK to the lonesome shark monitoring contract to watch out for your health</div>
+            { isMonitoring && <div className="py-4 space-y-4">
+            <div className="flex justify-center"><CircularProgress isIndeterminate color="purple.500"/></div>
+                <Progress colorScheme="green" size="lg" value={progressVal} hasStripe/>
+            </div>}
             {
                 (userAccount && userAccount?.status != EStatus.ACTIVATED)
                     ? <button className="text-white bg-purple px-3 py-2 rounded-md"
