@@ -11,31 +11,24 @@
 ```
 Created with https://www.ascii-art-generator.org/
 
-# LonesomeShark FlashLoan Liquidation Protection Platform V1
-
-This repository contains...
-
-## What is LonesomeShark?
+## LonesomeShark 
 
 LonesomeShark is a FlashLoan Liquidation Protection Platform that protects DeFi borrowers from costly liquidations by giving them a simple, friendly, and easy to use UI to monitor their health factor.
 
-## Source Code
-The source code hierarchy is as follows...
+#### Deployed - Kovan Testnet (beta release only)
+Live demo: https://lonesomeshark.xyz/ 
 
-## Connect with the team 
+#### Connect with the team 
 You can join at the [Discord]() channel or connect with the team on [Twitter](https://twitter.com/LoansomeShark/) if you run into any issues with our platform or talk with other borrowers.
 
-## Getting Started
-Watch our demo video at EthOnline [here](https://showcase.ethglobal.com/ethonline2021/lonesomeshark)for a walkthrough of how to use the platform. 
+#### Information 
+- Created at: [ETHOnline 2021 Hackathon](https://showcase.ethglobal.com/ethonline2021/lonesomeshark)
+- Slides: [Presentation Slides](https://docs.google.com/presentation/d/1tuCO3Hw4RS6BgavjkVtaY2nvTY4syzkuDcwfEhsEPQU/edit?usp=sharing)
+- Figma: [Mockups, wireframes, and logic flow](https://www.figma.com/files/team/1025360940881948893/Lonesomeshark) 
+- Notion: [Brainstorming](https://www.notion.so/cb45e1b7c33049f8a8a705ea908b9d40?v=2da1a37175414067b70eff90765c1e76)
+- R&D: [An Empirical Study of DeFi Liquidations: Incentives, Risks, and Instabilities
+](https://arxiv.org/abs/2106.06389)
 
-## Setup
-Follow the next steps to setup the repository:
-
-## Test
-You can run the test cases in protection/packages/core/test with the following commands: 
-
-## Deployments
-
-To install all the dependencies run 'npm install' 
-
-### Kovan deployment
+#### Thought Process
+- Original flash loan idea was a cross exchange arbitrage bot was inspired by Julien Klepatch from Eat the Blocks. 
+- Week 2-3 changed directions and decided on an open source liquidation bot driven by Aave's hack ideas. 
