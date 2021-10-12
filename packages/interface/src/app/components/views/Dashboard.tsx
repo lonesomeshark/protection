@@ -36,9 +36,11 @@ interface IUserReserveData {
     stableBorrowRate: number
     liquidityRate: number
     stableRateLastUpdated: number
-    usageAsCollateralEnabled: boolean;
-    token: string,
+    usageAsCollateralEnabled: boolean
+    token: string
     symbol: string
+    variableBorrowRate: number
+    averageStableBorrowRate: number
 }
 enum EStatus {
     PAUSED,
@@ -111,7 +113,7 @@ const parseDebt = (d: IUserReserveData): IDebt => ({
     asset: d.symbol,
     assetIcon: (icons as any)[d.symbol] || ethIcon,
     value: (d.currentVariableDebt).toFixed(3) + "",
-    interest: (d.liquidityRate / 10000000).toFixed(3) + "%"
+    interest: (d.variableBorrowRate / 10000000).toFixed(3) + "%"
 })
 
 const parseDeposit = (d: IUserReserveData): IDeposit => ({
@@ -159,7 +161,9 @@ function Dashboard() {
                         "stableRateLastUpdated": Number(ethers.utils.formatEther(d.stableRateLastUpdated)),
                         "usageAsCollateralEnabled": d.usageAsCollateralEnabled,
                         "token": d.token,
-                        "symbol": d.symbol
+                        "symbol": d.symbol,
+                        "variableBorrowRate": Number(ethers.utils.formatEther(d.variableBorrowRate)),
+                        "averageStableBorrowRate": Number(ethers.utils.formatEther(d.averageStableBorrowRate))
                     }
                 });
                 const userPosition = {
