@@ -128,6 +128,7 @@ function Dashboard() {
     const [userData, setUserData] = useState<IUserReserveData[]>();
     const [userPosition, setUserPosition] = useState<IUserPosition>();
     const [userAccount, setUserAccount] = useState<IUserAccount>();
+    const [isValidUser, setIsValidUser] = useState(false);
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -169,6 +170,7 @@ function Dashboard() {
                 console.log("user position", userPosition)
                 setUserData(d);
                 setUserPosition(userPosition);
+                setIsValidUser(true);
                 
             })
             .catch(e => {
@@ -178,12 +180,15 @@ function Dashboard() {
     }, [userAccount?.collaterals.length])
 
     useEffect(()=>{
-        const accountInterval = setInterval(() => getLatestUserAccount(), 30*1000); 
-        getLatestUserAccount()
-        return function(){
-            clearInterval(accountInterval)
-        }
-    },[])
+
+        if(isValidUser) {
+            const accountInterval = setInterval(() => getLatestUserAccount(), 30*1000); 
+            getLatestUserAccount()
+            return function(){
+                clearInterval(accountInterval)
+            }
+        }     
+    },[isValidUser])
     useEffect(() => {
         if (isNaN(Number(customThreshold))) {
             // console.log("Not a number. Please enter a number.");
@@ -234,7 +239,11 @@ function Dashboard() {
                     setCustomThreshold(data.threshold+"");
                 } 
             })
-            .catch(console.error)
+            .catch(e => {
+                console.log("error getting user account");
+                console.error;
+                setIsValidUser(false);
+            })
         },seconds *1000);
     }
    
@@ -518,7 +527,7 @@ const dashboard = (
             <div className="col-span-2">
                     <Tabs variant="enclosed" index={atIndex}>
                         <TabList>
-                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. {userAccount && userAccount?.payback? `Add more gas or update HF Treshold: ${userAccount.threshold}?`: "Register with us"}</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. {userAccount && userAccount?.payback? `Add more gas or update HF Threshold: ${userAccount.threshold}?`: "Register with us"}</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(1)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">2. Collaterals ( {userAccount?.collaterals.length} )</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount && userAccount?.collaterals.length >= 1 ? false : true} className="dark:text-white">3. Monitoring</ChakraTab>
 
@@ -576,7 +585,7 @@ const dashboard = (
 
     return (
         <div className="dashboard max-w-7xl mx-auto px-6">
-            <Tab.Group
+            {isValidUser && <Tab.Group
                 defaultIndex={0}
                 onChange={index => {
                     console.log(index)
@@ -589,9 +598,9 @@ const dashboard = (
                     <Tab.Panel>{dashboard}</Tab.Panel>
                     <Tab.Panel>{history}</Tab.Panel>
                 </Tab.Panels>
-            </Tab.Group>
+            </Tab.Group>}
 
-
+            {!isValidUser && <div className="text-xl dark:text-white mt-4">No data found for the selected wallet address.</div>}
         </div>
     )
 }
