@@ -11,7 +11,7 @@ import LendingPoolAddressesProvider from '@aave/protocol-v2/artifacts/contracts/
 import { ILendingPoolAddressesProvider__factory } from '../typechain/factories/ILendingPoolAddressesProvider__factory';
 import { PaybackLoan__factory } from '../typechain/factories/PaybackLoan__factory';
 import { PaybackLoan } from '../typechain/PaybackLoan';
-import { networkAddresses } from '../utils/utils';
+import { networkAddresses } from '../utils';
 let contract: PaybackLoan;
 const contractAddress: string = '0x90A37ccc6B2033a47DED00E25F5423bAF9caaA14';
 let owner: SignerWithAddress, accounts: SignerWithAddress[];

@@ -9,7 +9,7 @@ import { ILendingPoolAddressesProvider } from '../typechain/ILendingPoolAddresse
 import LendingPool from '@aave/protocol-v2/artifacts/contracts/protocol/lendingpool/LendingPool.sol/LendingPool.json';
 import LendingPoolAddressesProvider from '@aave/protocol-v2/artifacts/contracts/protocol/configuration/LendingPoolAddressesProvider.sol/LendingPoolAddressesProvider.json';
 import { ILendingPoolAddressesProvider__factory } from '../typechain/factories/ILendingPoolAddressesProvider__factory';
-import { networkAddresses } from '../utils/utils';
+import { networkAddresses } from '../utils';
 import { BigNumber } from '@ethersproject/bignumber';
 import { LoneSomeSharkMonitor__factory } from '../typechain/factories/LoneSomeSharkMonitor__factory';
 
@@ -153,13 +153,13 @@ describe('kovan Subscribers', () => {
 
   it('should activate user and allow his contract to withdraw funds', async function () {
     this.timeout(250000);
-    const tx = await contract.activate(ethers.utils.parseEther('1.01'));
+    const tx = await contract.registerHF(ethers.utils.parseEther('1.01'));
     console.log(tx);
 
     const user = await contract['getAccount()']();
     console.log(user);
 
-    expect(user.active).to.be.equal(true);
+    expect(user.status).to.be.equal(0);
   });
   it('should approve IERC20', async () => {
     const tx = await contract.approveAsCollateralOnlyIfAllowedInAave(linkAddress);

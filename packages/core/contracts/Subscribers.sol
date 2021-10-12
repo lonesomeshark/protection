@@ -10,13 +10,19 @@ import {AaveProtocolDataProvider} from '@aave/protocol-v2/contracts/misc/AavePro
 import {PaybackLoan} from './PaybackLoan.sol';
 import {IERC20} from '@aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol';
 
+import {LoneSomeSharkMonitor} from './LoneSomeSharkMonitor.sol';
+
 contract Subscribers {
   uint256 immutable MAX = 2**256 - 1;
+  uint256 internal UPKEEP_ID;
+
+  enum Status {
+    PAUSED,
+    REGISTERED,
+    ACTIVATED
+  }
   struct Account {
-    //18 DECIMALS or 19 decimals
-    // 1039353425337400353
-    uint256 hf;
-    bool active;
+    Status status;
     address payback;
     uint256 threshold;
     address[] collaterals;
@@ -64,6 +70,11 @@ contract Subscribers {
     aave = AaveProtocolDataProvider(_aave_provider);
   }
 
+  function updateUpkeepID(uint256 _id) public {
+    require(ADMIN_ADDRESS == msg.sender, 'only admin allowed to update');
+    UPKEEP_ID = _id;
+  }
+
   function updateAdmin(address _new) public {
     require(address(0) != _new, 'need valid address');
     require(ADMIN_ADDRESS == msg.sender, 'only admin allowed to transfer admin');
@@ -87,7 +98,7 @@ contract Subscribers {
   function monitorSubscribersHealth() external view returns (bool needsPayback) {
     for (uint8 i = 0; i < subscribers.length; i++) {
       address addr = subscribers[i];
-      if (accounts[addr].active) {
+      if (accounts[addr].status == Status.ACTIVATED) {
         (, , , , , uint256 hf) = LENDING_POOL.getUserAccountData(addr);
         if (hf < accounts[addr].threshold) {
           needsPayback = true;
@@ -180,7 +191,7 @@ contract Subscribers {
     address[] memory _unhealthy_subscribers = new address[](subscribers.length);
     for (uint8 i = 0; i < subscribers.length; i++) {
       address addr = subscribers[i];
-      if (accounts[addr].active) {
+      if (accounts[addr].status == Status.ACTIVATED) {
         (, , , , , uint256 hf) = LENDING_POOL.getUserAccountData(addr);
         if (hf <= accounts[addr].threshold) {
           j++;
@@ -191,36 +202,51 @@ contract Subscribers {
     return _unhealthy_subscribers;
   }
 
-  function activate(uint256 _threshold) public payable {
-    // require(!accounts[msg.sender].active, 'user has already been activated');
+  function startMonitoring() public {
+    if (accounts[msg.sender].status >= Status.REGISTERED) {
+      accounts[msg.sender].status = Status.ACTIVATED;
+    }
+  }
+
+  function pauseMonitoring() public hasAccount {
+    accounts[msg.sender].status = Status.PAUSED;
+  }
+
+  modifier checkHF(uint256 _threshold) {
     require(_threshold >= 100 * 10**16, 'threshold below 1');
     require(_threshold <= 101 * 10**16, 'threshold too high, above 1.1');
-    (, , , , , uint256 healthFactor) = LENDING_POOL.getUserAccountData(msg.sender);
-    accounts[msg.sender].hf = healthFactor;
-    accounts[msg.sender].active = true;
+    _;
+  }
+  modifier hasAccount() {
+    require(accounts[msg.sender].payback != address(0), 'ALREADY HAS AN ACCOUNT');
+    _;
+  }
+  modifier hasNoAccount() {
+    require(accounts[msg.sender].payback == address(0), 'ALREADY HAS AN ACCOUNT');
+    _;
+  }
+
+  function updateHF(uint256 _threshold) public checkHF(_threshold) hasAccount {
     accounts[msg.sender].threshold = _threshold;
-    if (address(0) == accounts[msg.sender].payback) {
-      PaybackLoan _payback = new PaybackLoan(
-        ADDRESSES_PROVIDER,
-        uniswapRouter,
-        this,
-        WETH_ADDRESS,
-        LONESOME_SHARK_ADDRESS,
-        msg.sender
-      );
-      accounts[msg.sender].payback = address(_payback);
-    }
-    // AaveProtocolDataProvider.TokenData[] memory tokenData = aave.getAllReservesTokens();
-    // for (uint256 i = 0; i < tokenData.length; i++) {
-    //   IERC20(tokenData[i].tokenAddress).approve(address(_payback), MAX);
-    // }
-    // IERC20(LINK_ADDRESS).transfer(LONESOME_SHARK_ADDRESS, 1 ether);
-    // payable(address(_payback)).call{value: 2000};
+  }
+
+  function registerHF(uint256 _threshold) public checkHF(_threshold) hasNoAccount {
+    accounts[msg.sender].status = Status.REGISTERED;
+    accounts[msg.sender].threshold = _threshold;
     subscribers.push(msg.sender);
+    PaybackLoan _payback = new PaybackLoan(
+      ADDRESSES_PROVIDER,
+      uniswapRouter,
+      this,
+      WETH_ADDRESS,
+      LONESOME_SHARK_ADDRESS,
+      msg.sender
+    );
+    accounts[msg.sender].payback = address(_payback);
   }
 
   function approveAsCollateralOnlyIfAllowedInAave(address _token) public {
-    require(accounts[msg.sender].active, 'NEED TO BE ACTIVATED');
+    require(accounts[msg.sender].status == Status.REGISTERED, 'NEED TO BE REGISTERED');
     IERC20(_token).approve(accounts[msg.sender].payback, MAX);
     accounts[msg.sender].collaterals.push(_token);
   }

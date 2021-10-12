@@ -16,8 +16,7 @@ contract LoneSomeSharkMonitor is KeeperCompatibleInterface {
 
   bool internal pause;
   bool internal test_trigger;
-  uint96 internal linkCost = 5 * 10**17;
-  uint256 internal registryID;
+  uint256 internal registryID = 730;
 
   constructor(
     Subscribers _subscribers,
@@ -39,9 +38,12 @@ contract LoneSomeSharkMonitor is KeeperCompatibleInterface {
     registryID = _id;
   }
 
-  function updateLinkCost(uint96 _new_cost) public {
-    require(ADMIN_ADDRESS == msg.sender, 'require admin to update link cost');
-    linkCost = _new_cost;
+  function getRegistryID() public view returns (uint256) {
+    return registryID;
+  }
+
+  function getRegistry() public view returns (address) {
+    return address(registry);
   }
 
   function setPause(bool _pause) public {
@@ -98,14 +100,5 @@ contract LoneSomeSharkMonitor is KeeperCompatibleInterface {
     }
   }
 
-  // need to add this
-  function addFunds() public payable {
-    // subscribers.addedFunds();
-    registry.addFunds(registryID, linkCost);
-  }
-
-  receive() external payable {
-    // console.log("calling out receive with value: %s", msg.value);
-    // console.log("calling out receive with msg.sender: %s", msg.sender);
-  }
+  // receive() external payable {}
 }

@@ -5,9 +5,15 @@ import 'hardhat/console.sol';
 
 contract Greeter {
   string private greeting;
+
+  enum Status {
+    REGISTERED,
+    ACTIVE
+  }
   struct Account {
     string description;
     address[] collaterals;
+    Status status;
   }
   mapping(address => Account) accounts;
 
@@ -94,6 +100,7 @@ contract Greeter {
   function setAccount(string memory _description, address _new) public {
     accounts[msg.sender].collaterals.push(_new);
     accounts[msg.sender].description = _description;
+    accounts[msg.sender].status = Status.REGISTERED;
   }
 
   function getAccount() public view returns (Account memory) {
