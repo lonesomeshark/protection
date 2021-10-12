@@ -40,6 +40,8 @@ contract Subscribers {
     bool usageAsCollateralEnabled;
     address token;
     string symbol;
+    uint256 variableBorrowRate;
+    uint256 averageStableBorrowRate;
   }
 
   mapping(address => Account) accounts;
@@ -135,6 +137,8 @@ contract Subscribers {
         uint40 stableRateLastUpdated,
         bool usageAsCollateralEnabled
       ) = aave.getUserReserveData(tokenData[i].tokenAddress, msg.sender);
+      (, , , , uint256 variableBorrowRate, , uint256 averageStableBorrowRate, , , ) = aave
+        .getReserveData(tokenData[i].tokenAddress);
       userTokenData[i] = UserReserveData(
         currentATokenBalance,
         currentStableDebt,
@@ -146,7 +150,9 @@ contract Subscribers {
         stableRateLastUpdated,
         usageAsCollateralEnabled,
         tokenData[i].tokenAddress,
-        tokenData[i].symbol
+        tokenData[i].symbol,
+        variableBorrowRate,
+        averageStableBorrowRate
       );
     }
 
