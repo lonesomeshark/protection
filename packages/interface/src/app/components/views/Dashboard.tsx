@@ -9,6 +9,7 @@ import inchIcon from "../../assets/1INCH.svg";
 import wbtcIcon from "../../assets/WBTC.svg";
 import shield from "../../assets/shield.png";
 import { Tab as ChakraTab, Tabs, TabList, TabPanel, TabPanels } from "@chakra-ui/tabs";
+import { Progress } from "@chakra-ui/react";
 
 import { ethers } from "ethers";
 import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface, PaybackLoan  } from '@lonesomeshark/core/typechain';
@@ -132,6 +133,7 @@ function Dashboard() {
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
+
     const signer = provider.getSigner();
 
     const contract = (new ethers.Contract(subscribers.address, subscribers.abi, signer)) as Subscribers;
