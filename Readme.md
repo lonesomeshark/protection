@@ -20,7 +20,7 @@ LonesomeShark is a FlashLoan Liquidation Protection Platform that protects DeFi 
 Live demo: https://lonesomeshark.xyz/ 
 
 #### Connect with the team 
-You can join at the [Discord]() channel or connect with the team on [Twitter](https://twitter.com/LoansomeShark/) if you run into any issues with our platform or talk with other borrowers.
+You can join at the [Discord](https://discord.gg/uuj8RKm6) channel or connect with the team on [Twitter](https://twitter.com/LoansomeShark/) if you run into any issues with our platform or talk with other borrowers.
 
 #### Information 
 - Created at: [ETHOnline 2021 Hackathon](https://showcase.ethglobal.com/ethonline2021/lonesomeshark)
