@@ -102,5 +102,10 @@ contract PaybackLoan is BaseUniswapAdapter {
 
     return FlashParams(user);
   }
-  // receive() payable external {}
+
+  receive() external payable {}
+
+  function getBalance() public view returns (uint256) {
+    return address(this).balance;
+  }
 }

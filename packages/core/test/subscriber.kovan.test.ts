@@ -9,10 +9,19 @@ import { ILendingPoolAddressesProvider } from '../typechain/ILendingPoolAddresse
 import LendingPool from '@aave/protocol-v2/artifacts/contracts/protocol/lendingpool/LendingPool.sol/LendingPool.json';
 import LendingPoolAddressesProvider from '@aave/protocol-v2/artifacts/contracts/protocol/configuration/LendingPoolAddressesProvider.sol/LendingPoolAddressesProvider.json';
 import { ILendingPoolAddressesProvider__factory } from '../typechain/factories/ILendingPoolAddressesProvider__factory';
-import { networkAddresses } from '../utils/utils';
+import { networkAddresses } from '../utils';
 import { BigNumber } from '@ethersproject/bignumber';
+import { LoneSomeSharkMonitor__factory } from '../typechain/factories/LoneSomeSharkMonitor__factory';
+
+import subscribersArtifact from '../deployed/kovan/Subscribers.json';
+import monitorArtifact from '../deployed/kovan/LoneSomeSharkMonitor.json';
+import { LoneSomeSharkMonitor } from '../typechain/LoneSomeSharkMonitor';
+
+const useContracts = false;
 let contract: Subscribers;
-const contractAddress: string = '';
+let monitor: LoneSomeSharkMonitor;
+const contractAddress: string = useContracts ? subscribersArtifact.address : '';
+const monitorAddress: string = useContracts ? monitorArtifact.address : '';
 let owner: SignerWithAddress, accounts: SignerWithAddress[];
 
 const {
@@ -39,6 +48,19 @@ describe('kovan Subscribers', () => {
         linkAddress
       );
     }
+
+    if (monitorAddress) {
+      monitor = await new LoneSomeSharkMonitor__factory(owner).attach(monitorAddress);
+    } else {
+      monitor = await new LoneSomeSharkMonitor__factory(owner).deploy(
+        contract.address,
+        chainlinkRegistryAddress,
+        linkAddress
+      );
+    }
+    console.log('monitor deployed', chalk.blue(monitor.address));
+
+    await contract.updateLoneSomeSharkAddress(monitor.address);
     console.log('📰', 'contract address-> ', chalk.blue(contract.address));
   });
 
@@ -77,57 +99,76 @@ describe('kovan Subscribers', () => {
   //   console.log({ accountString: account.toString(), account });
   //   // expect(account.).to.be.greaterThan(1.03);
   // });
-  it('should get userdata', async () => {
-    interface UserReserveData {
-      currentATokenBalance: BigNumber;
-      currentStableDebt: BigNumber;
-      currentVariableDebt: BigNumber;
-      principalStableDebt: BigNumber;
-      scaledVariableDebt: BigNumber;
-      stableBorrowRate: BigNumber;
-      liquidityRate: BigNumber;
-      stableRateLastUpdated: BigNumber;
-      usageAsCollateralEnabled: boolean;
-      token: string;
-      symbol: string;
-    }
-    interface UserPosition {
-      totalCollateralETH: number;
-      totalDebtETH: number;
-      availableBorrowsETH: number;
-      currentLiquidationThreshold: number;
-      ltv: number;
-      healthFactor: number;
-    }
-    const data = await contract.getUserData();
-    console.log(data);
-    const parsedData = data[0].map((d) => {
-      return {
-        currentATokenBalance: Number(ethers.utils.formatEther(d.currentATokenBalance)),
-        currentStableDebt: Number(ethers.utils.formatEther(d.currentStableDebt)),
-        currentVariableDebt: Number(ethers.utils.formatEther(d.currentVariableDebt)),
-        principalStableDebt: Number(ethers.utils.formatEther(d.principalStableDebt)),
-        scaledVariableDebt: Number(ethers.utils.formatEther(d.scaledVariableDebt)),
-        stableBorrowRate: Number(ethers.utils.formatEther(d.stableBorrowRate)),
-        liquidityRate: Number(ethers.utils.formatEther(d.liquidityRate)),
-        stableRateLastUpdated: Number(ethers.utils.formatEther(d.stableRateLastUpdated)),
-        usageAsCollateralEnabled: d.usageAsCollateralEnabled,
-        symbol: d.symbol,
-        address: d.token,
-      };
-    });
-    console.log(parsedData);
-    console.log({
-      currentLiquidationThreshold: Number(
-        ethers.utils.formatEther(data.currentLiquidationThreshold)
-      ),
-      healthFactor: Number(ethers.utils.formatEther(data.healthFactor)),
-      availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
-      ltv: Number(ethers.utils.formatEther(data.ltv)),
-      totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
-      totalDebtETH: Number(ethers.utils.formatEther(data.totalDebtETH)),
-    });
+  // it('should get userdata', async () => {
+  //   interface UserReserveData {
+  //     currentATokenBalance: BigNumber;
+  //     currentStableDebt: BigNumber;
+  //     currentVariableDebt: BigNumber;
+  //     principalStableDebt: BigNumber;
+  //     scaledVariableDebt: BigNumber;
+  //     stableBorrowRate: BigNumber;
+  //     liquidityRate: BigNumber;
+  //     stableRateLastUpdated: BigNumber;
+  //     usageAsCollateralEnabled: boolean;
+  //     token: string;
+  //     symbol: string;
+  //   }
+  //   interface UserPosition {
+  //     totalCollateralETH: number;
+  //     totalDebtETH: number;
+  //     availableBorrowsETH: number;
+  //     currentLiquidationThreshold: number;
+  //     ltv: number;
+  //     healthFactor: number;
+  //   }
+  //   const data = await contract.getUserData();
+  //   console.log(data);
+  //   const parsedData = data[0].map((d) => {
+  //     return {
+  //       currentATokenBalance: Number(ethers.utils.formatEther(d.currentATokenBalance)),
+  //       currentStableDebt: Number(ethers.utils.formatEther(d.currentStableDebt)),
+  //       currentVariableDebt: Number(ethers.utils.formatEther(d.currentVariableDebt)),
+  //       principalStableDebt: Number(ethers.utils.formatEther(d.principalStableDebt)),
+  //       scaledVariableDebt: Number(ethers.utils.formatEther(d.scaledVariableDebt)),
+  //       stableBorrowRate: Number(ethers.utils.formatEther(d.stableBorrowRate)),
+  //       liquidityRate: Number(ethers.utils.formatEther(d.liquidityRate)),
+  //       stableRateLastUpdated: Number(ethers.utils.formatEther(d.stableRateLastUpdated)),
+  //       usageAsCollateralEnabled: d.usageAsCollateralEnabled,
+  //       symbol: d.symbol,
+  //       address: d.token,
+  //     };
+  //   });
+  //   console.log(parsedData);
+  //   console.log({
+  //     currentLiquidationThreshold: Number(
+  //       ethers.utils.formatEther(data.currentLiquidationThreshold)
+  //     ),
+  //     healthFactor: Number(ethers.utils.formatEther(data.healthFactor)),
+  //     availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
+  //     ltv: Number(ethers.utils.formatEther(data.ltv)),
+  //     totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
+  //     totalDebtETH: Number(ethers.utils.formatEther(data.totalDebtETH)),
+  //   });
+  // });
+
+  it('should activate user and allow his contract to withdraw funds', async function () {
+    this.timeout(250000);
+    const tx = await contract.registerHF(ethers.utils.parseEther('1.01'));
+    console.log(tx);
+
+    const user = await contract['getAccount()']();
+    console.log(user);
+
+    expect(user.status).to.be.equal(0);
+  });
+  it('should approve IERC20', async () => {
+    const tx = await contract.approveAsCollateralOnlyIfAllowedInAave(linkAddress);
+    console.log(tx);
   });
 
-  it('should activate user and allow his contract to withdraw funds', async () => {});
+  it('should get user account wit link as collateral', async () => {
+    const data = await contract['getAccount()']();
+
+    console.log({ data });
+  });
 });
