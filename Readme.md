@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [![Add to Homescreen](https://img.shields.io/badge/Skynet-Add%20To%20Homescreen-00c65e?logo=skynet&labelColor=0d0d0d)](https://homescreen.hns.siasky.net/#/skylink/AQCbNkLANXHxPCBoXcgq6rauHa81Z5h9da88rVvijXSvTA)
 
 ```
@@ -39,6 +38,3 @@ You can join at the [Discord](https://discord.gg/uuj8RKm6) channel or connect wi
 
 - Original flash loan idea was a cross exchange arbitrage bot was inspired by Julien Klepatch from Eat the Blocks.
 - Week 2-3 changed directions and decided on an open source liquidation bot driven by Aave's hack ideas.
-=======
-[![Add to Homescreen](https://img.shields.io/badge/Skynet-Add%20To%20Homescreen-00c65e?logo=skynet&labelColor=0d0d0d)](https://homescreen.hns.siasky.net/#/skylink/AQAl8r2QKpRM000EUySuQeYujdF41P9Qcy0pcZo5l1Dq4Q)
->>>>>>> f334b032eda40cc1494f101edc1d18aa9aa34a00
