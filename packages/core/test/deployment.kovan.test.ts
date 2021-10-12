@@ -13,7 +13,7 @@ import { LoneSomeSharkMonitor } from '../typechain/LoneSomeSharkMonitor';
 import { PaybackLoan__factory } from '../typechain/factories/PaybackLoan__factory';
 import { LoneSomeSharkMonitor__factory } from '../typechain/factories/LoneSomeSharkMonitor__factory';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { networkAddresses } from '../utils/utils';
+import { networkAddresses } from '../utils';
 let subscribers: Subscribers;
 let monitor: LoneSomeSharkMonitor;
 let payback: PaybackLoan;

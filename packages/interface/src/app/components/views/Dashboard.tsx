@@ -7,48 +7,50 @@ import batIcon from "../../assets/BAT.svg";
 import linkIcon from "../../assets/link.svg";
 import inchIcon from "../../assets/1INCH.svg";
 import wbtcIcon from "../../assets/WBTC.svg";
-// import susdIcon from '../../assets/susd.png';
 import shield from "../../assets/shield.png";
 import { ArrowRightIcon } from "@heroicons/react/outline";
 import { Tab as ChakraTab, Tabs, TabList, TabPanel, TabPanels } from "@chakra-ui/tabs";
-import axios from "axios";
-
-// import subscribersArtifact from "@lonesomeshark/core/deployed/kovan/Subscribers.json";
 
 import { ethers } from "ethers";
-import { Subscribers } from '@lonesomeshark/core/typechain';
+import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface  } from '@lonesomeshark/core/typechain';
 
-const getSubscribers = (network: 'kovan') => {
-    const s = require(`@lonesomeshark/core/deployed/${network}/Subscribers.json`);
+import ierc20Artifact from "@lonesomeshark/core/artifacts/@aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol/IERC20.json"
+import registryArtifact from "@lonesomeshark/core/artifacts/contracts/interfaces/KeeperRegistryInterface.sol/KeeperRegistryBaseInterface.json"
 
+
+const getContract = (contract: "LoneSomeSharkMonitor" | "Subscribers", network: 'kovan') => {
+    const s = require(`@lonesomeshark/core/deployed/${network}/${contract}.json`);
     return {
         address: s.address,
         abi: s.abi,
         bytecode: s.bytecode
     }
 }
-interface UserReserveData {
-    currentATokenBalance: number //ethers.BigNumber;
-    currentStableDebt: number //ethers.BigNumber;
-    currentVariableDebt: number //ethers.BigNumber;
-    principalStableDebt: number // ethers.BigNumber;
-    scaledVariableDebt: number //ethers.BigNumber;
-    stableBorrowRate: number //ethers.BigNumber;
-    liquidityRate: number //ethers.BigNumber;
-    stableRateLastUpdated: number //ethers.BigNumber;
+interface IUserReserveData {
+    currentATokenBalance: number 
+    currentStableDebt: number 
+    currentVariableDebt: number 
+    principalStableDebt: number 
+    scaledVariableDebt: number 
+    stableBorrowRate: number 
+    liquidityRate: number 
+    stableRateLastUpdated: number 
     usageAsCollateralEnabled: boolean;
     token: string,
     symbol: string
 }
-
-interface UserAccount {
-    hf: number;
-    active: boolean;
+enum EStatus {
+    PAUSED,
+    REGISTERED,
+    ACTIVATED
+}
+interface IUserAccount {
+    status: EStatus;
     payback: string;
     threshold: number;
     collaterals: string[] //token addresses
 }
-interface UserPosition {
+interface IUserPosition {
     totalCollateralETH: number,
     totalDebtETH: number,
     availableBorrowsETH: number,
@@ -57,7 +59,10 @@ interface UserPosition {
     healthFactor: number
 }
 
-const subscribers = getSubscribers("kovan");
+const linkAddress = "0xa36085F69e2889c224210F603D836748e7dC0088";
+
+const subscribers = getContract("Subscribers","kovan");
+const lonesomeshark = getContract("LoneSomeSharkMonitor","kovan"); 
 const icons = {
     "ETH": ethIcon,
     "USDC": usdcIcon,
@@ -97,24 +102,24 @@ interface IDebt {
     interest: string
 }
 
-const filterDeposit = (d: UserReserveData) => d.currentATokenBalance;
+const filterDeposit = (d: IUserReserveData) => d.currentATokenBalance;
 
-const filterDebt = (d: UserReserveData) => d.currentVariableDebt;
-const parseDebt = (d: UserReserveData): IDebt => ({
+const filterDebt = (d: IUserReserveData) => d.currentVariableDebt;
+
+const parseDebt = (d: IUserReserveData): IDebt => ({
     asset: d.symbol,
     assetIcon: (icons as any)[d.symbol] || ethIcon,
     value: (d.currentVariableDebt).toFixed(3) + "",
     interest: (d.liquidityRate/10000000).toFixed(3) + "%"
 }) 
 
-
-
-const parseDeposit = (d: UserReserveData): IDeposit => ({
+const parseDeposit = (d: IUserReserveData): IDeposit => ({
     asset: d.symbol,
     assetIcon: (icons as any)[d.symbol] || ethIcon,
     value: (d.currentATokenBalance).toFixed(3) + "",
     apy: (d.liquidityRate/10000000).toFixed(3) + "%"
 })
+
 function Dashboard() {
     const [isProtected, setIsProtected] = useState(false);
     const [atIndex, setAtIndex] = useState(0);
@@ -122,22 +127,22 @@ function Dashboard() {
     const [gasValdsnErrMsg, setGasValdsnErrMsg] = useState("");
     const [customThreshold, setCustomThreshold] = useState("1.01");
     const [custmGasLimit, setCustmGasLimit] = useState("100000");
-    const [userData, setUserData] = useState<UserReserveData[]>();
-    const [userPosition, setUserPosition] = useState<UserPosition>();
-    const [thrshldModified, setThrshldModified] = useState(false);
-    const [userAccount, setUserAccount] = useState<UserAccount>();
+    const [userData, setUserData] = useState<IUserReserveData[]>();
+    const [userPosition, setUserPosition] = useState<IUserPosition>();
+    const [userAccount, setUserAccount] = useState<IUserAccount>();
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
 
     const contract = (new ethers.Contract(subscribers.address, subscribers.abi, signer)) as Subscribers;
-
+    const shark = (new ethers.Contract(lonesomeshark.address, lonesomeshark.abi, signer)) as LoneSomeSharkMonitor;
+    const linkToken = (new ethers.Contract(linkAddress, ierc20Artifact.abi, signer)) as IERC20;
     useEffect(() => {
         contract.getUserData()
             .then((data) => {
                 console.log("return from get user data:", data)
-                const d: UserReserveData[] = data[0].map((d) => {
+                const d: IUserReserveData[] = data[0].map((d) => {
                     return {
                         "currentATokenBalance": Number(ethers.utils.formatEther(d.currentATokenBalance)),
                         "currentStableDebt": Number(ethers.utils.formatEther(d.currentStableDebt)),
@@ -156,7 +161,7 @@ function Dashboard() {
                     currentLiquidationThreshold: Number(
                         ethers.utils.formatEther(data.currentLiquidationThreshold)
                     ),
-                    healthFactor: Number(Number(ethers.utils.formatEther(data.healthFactor)).toFixed(5)),
+                    healthFactor: Number(parseFloat(ethers.utils.formatEther(data.healthFactor)).toFixed(5)),
                     availableBorrowsETH: Number(ethers.utils.formatEther(data.availableBorrowsETH)),
                     ltv: Number(ethers.utils.formatEther(data.ltv)),
                     totalCollateralETH: Number(ethers.utils.formatEther(data.totalCollateralETH)),
@@ -172,16 +177,15 @@ function Dashboard() {
                 console.log("error getting getUserData")
                 console.error(e)
             });
-    }, [])
+    }, [userAccount?.collaterals])
 
     const getLatestUserAccount = ()=>{
         contract["getAccount()"]()
         .then((account) =>{
 
             const data = {
-                hf: parseToNumber(account.hf),
-                active: account.active,
-                payback: account.payback,
+                status: account.status,
+                payback: account.payback == "0x0000000000000000000000000000000000000000" ? "" : account.payback,
                 threshold: parseToNumber(account.threshold),
                 collaterals: account.collaterals
             }
@@ -246,7 +250,7 @@ const protectMyAssets = ()=>{
     const val = formatTreshold(customThreshold);
     console.log({customThreshold, val})
 
-    contract.activate(val)
+    contract.registerHF(val)
         .then(
             (tx)=>{
                 console.log(tx)
@@ -325,11 +329,7 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
 
         console.log("Entered threshold value ", customThreshold);
         setThrshldValdsnErrMsg("");
-        setThrshldModified(true);
         setAtIndex(1);
-        // if(isProtected) {
-        //     setIsProtected(!isProtected);
-        // }
     }
 
     const hasDecimal = (n: number) => {
@@ -364,6 +364,40 @@ const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
 
 
 
+    const startMonitoring = async ()=> {
+        const registryAddress = await shark.getRegistry();
+        const id = await shark.getRegistryID();
+        if(userAccount?.status != EStatus.ACTIVATED){
+            linkToken
+            .approve(registryAddress, ethers.utils.parseEther("1.0"))
+            .then((tx)=>{
+                console.log("transaction from approving link", tx);
+                const registryContract = (new ethers.Contract(registryAddress, registryArtifact.abi, signer)) as KeeperRegistryBaseInterface
+                registryContract.addFunds(id, ethers.utils.parseEther("1.0"))
+                .then((tx)=>{
+                    console.log("added funds to registry", tx);
+                    contract
+                    .startMonitoring()
+                    .then((tx)=>{
+                        console.log("monitoring started, ", tx);
+                        getLatestUserAccount()
+                    })
+                })
+                .catch(console.error)
+            })
+            .catch(console.error);
+        }
+    }
+
+    const pauseMonitoring = async () =>{
+        console.log("pause monitoring");
+        contract.pauseMonitoring()
+        .then((tx)=>{
+            console.log("tx pause monitoring", tx)
+            getLatestUserAccount()
+        })
+        .catch(console.error)
+    }
 
     const setThreshold = (
         <div className="setThreshold-panel space-y-4">
@@ -422,11 +456,18 @@ const collateralsTab = (<div className="pt-6 pl-4 pb-8 space-x-2 space-y-2">
     }
 </div>);
 
-const monitoringTab = (<div className="pt-6 pl-4 pb-11">
-    <div className="pb-2 opacity-50">Set your gas limit</div>
-    <div className="pb-8 opacity-50 text-5xl max-w-min" contentEditable="true">21000</div>
-    <div>
-        <button className="text-white bg-purple px-3 py-2 rounded-md" onClick={protectMyAssets}>Finish & protect my assets</button></div>
+const monitoringTab = (
+<div className="pt-6 pl-4 pb-11">
+    <div className="pb-2 opacity-50">Send 1 LINK to the lonesome shark monitoring contract to watch out for your health</div>
+    {
+        ( userAccount && userAccount?.status != EStatus.ACTIVATED )
+        ? <button className="text-white bg-purple px-3 py-2 rounded-md" 
+            onClick={startMonitoring}>Start Monitoring</button>
+        :   <button className="text-white bg-purple px-3 py-2 rounded-md" 
+            onClick={pauseMonitoring}>Pause Monitoring</button>
+
+    }
+    
 </div>);
 
 const dashboard = (
@@ -451,12 +492,14 @@ const dashboard = (
                             <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. Set your threshold</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(1)} isDisabled={atIndex === 0} className="dark:text-white">2. Gas Limit</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">3. Collaterals</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(3)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">4. Monitoring</ChakraTab>
 
                         </TabList>
                         <TabPanels className="bg-secondary">
                             <TabPanel>{setThreshold}</TabPanel>
                             <TabPanel>{gasLimitTab}</TabPanel>
                             <TabPanel>{collateralsTab}</TabPanel>
+                            <TabPanel>{monitoringTab}</TabPanel>
                         </TabPanels>
 
                     </Tabs>
