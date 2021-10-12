@@ -1,14 +1,15 @@
 [![Add to Homescreen](https://img.shields.io/badge/Skynet-Add%20To%20Homescreen-00c65e?logo=skynet&labelColor=0d0d0d)](https://homescreen.hns.siasky.net/#/skylink/AQCbNkLANXHxPCBoXcgq6rauHa81Z5h9da88rVvijXSvTA)
 
 ```
-.____                                                      _________.__                  __    
-|    |    ____   ____   ____   __________   _____   ____  /   _____/|  |__ _____ _______|  | __
-|    |   /  _ \ /    \_/ __ \ /  ___/  _ \ /     \_/ __ \ \_____  \ |  |  \\__  \\_  __ \  |/ /
-|    |__(  <_> )   |  \  ___/ \___ (  <_> )  Y Y  \  ___/ /        \|   Y  \/ __ \|  | \/    < 
-|_______ \____/|___|  /\___  >____  >____/|__|_|  /\___  >_______  /|___|  (____  /__|  |__|_ \
-        \/          \/     \/     \/            \/     \/        \/      \/     \/           \/
+#                                                         #####                              
+#        ####  #    # ######  ####   ####  #    # ###### #     # #    #   ##   #####  #    # 
+#       #    # ##   # #      #      #    # ##  ## #      #       #    #  #  #  #    # #   #  
+#       #    # # #  # #####   ####  #    # # ## # #####   #####  ###### #    # #    # ####   
+#       #    # #  # # #           # #    # #    # #            # #    # ###### #####  #  #   
+#       #    # #   ## #      #    # #    # #    # #      #     # #    # #    # #   #  #   #  
+#######  ####  #    # ######  ####   ####  #    # ######  #####  #    # #    # #    # #    # 
 ```
-Created with https://patorjk.com/software/taag
+Created with https://www.ascii-art-generator.org/
 
 # LonesomeShark FlashLoan Liquidation Protection Platform V1
 
