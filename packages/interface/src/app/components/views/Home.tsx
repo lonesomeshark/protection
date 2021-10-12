@@ -31,7 +31,7 @@ function Home({ connected }: Props) {
                     backgroundPosition: "center",
                     backgroundSize: "cover",
                 }}>
-                <div className="text-4xl text-white">
+                <div className="text-4xl text-white px-4">
                     Helping borrowers protect their collateral from liquidation
                 </div>
                 <div className="flex justify-center space-x-4">
@@ -48,17 +48,17 @@ function Home({ connected }: Props) {
                 <div className="bg-secondary rounded-md space-y-10 pt-6 pb-12 min-w-20 px-16 max-w-sm mx-auto md:mx-0">
                     <div className="text-gray-type1">Step 1:</div>
                     <div className="flex justify-center"><img src={wallet} alt="" /></div>
-                    <div className="">Connect your wallet</div>
+                    <div className="">Connect your wallet and<br/> go to dashboard</div>
                 </div>
                 <div className="bg-secondary rounded-md space-y-10 pt-6 pb-12 min-w-20 px-12 max-w-sm mx-auto md:mx-0">
                     <div className="text-gray-type1">Step 2:</div>
                     <div className="text-gray-type1 text-5xl max-w-min text-center mx-auto border-l-4 border-purple">1.01</div>
-                    <div className="pt-2">Enter in a custom Health <br />factor threshold</div>
+                    <div className="pt-2">Set custom Health Factor <br/>threshold & gas limit and<br/> &quot;<i>Sign up</i>&quot; to the service</div>
                 </div>
-                <div className="bg-secondary rounded-md space-y-6 pt-6 pb-12 min-w-20 px-16 max-w-sm mx-auto md:mx-0">
+                <div className="bg-secondary rounded-md space-y-6 pt-6 pb-12 min-w-20 px-8 max-w-sm mx-auto md:mx-0">
                     <div className="text-gray-type1">Step 3:</div>
                     <div className="flex justify-center"><img src={shield} alt="" className="scale-50" /></div>
-                    <div>Click on “Protect my <br />assets”</div>
+                    <div>Select tokens to be collaterized and <br/>&quot;<i>Start monitoring</i>&quot;, to<br/> protect your assets.</div>
                 </div>
             </div>
 
