@@ -10,6 +10,7 @@ import wbtcIcon from "../../assets/WBTC.svg";
 import shield from "../../assets/shield.png";
 import { Tab as ChakraTab, Tabs, TabList, TabPanel, TabPanels } from "@chakra-ui/tabs";
 import { Progress } from "@chakra-ui/react";
+import { CircularProgress } from "@chakra-ui/react"
 
 import { ethers } from "ethers";
 import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface, PaybackLoan } from '@lonesomeshark/core/typechain';
@@ -130,6 +131,7 @@ function Dashboard() {
     const [userPosition, setUserPosition] = useState<IUserPosition>();
     const [userAccount, setUserAccount] = useState<IUserAccount>();
     const [isValidUser, setIsValidUser] = useState(false);
+    const [displayLoader, setDisplayLoader] = useState(true);
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -173,11 +175,13 @@ function Dashboard() {
                 setUserData(d);
                 setUserPosition(userPosition);
                 setIsValidUser(true);
+                setDisplayLoader(false);
 
             })
             .catch(e => {
                 console.log("error getting getUserData")
                 console.error(e)
+                setDisplayLoader(false);
             });
     }, [userAccount?.collaterals.length])
 
@@ -240,11 +244,13 @@ function Dashboard() {
                     if (data.threshold + "" != customThreshold && data.threshold > 0) {
                         setCustomThreshold(data.threshold + "");
                     }
+                    setDisplayLoader(false);
                 })
                 .catch(e => {
                     console.log("error getting user account");
                     console.error;
                     setIsValidUser(false);
+                    setDisplayLoader(false);
                 })
         }, seconds * 1000);
     }
@@ -297,6 +303,7 @@ function Dashboard() {
         console.log("protecting my assets: ");
         const val = formatTreshold(customThreshold);
         console.log({ customThreshold, custmGasLimit });
+        setDisplayLoader(true);
         contract.registerHF(val, { value: custmGasLimit })
             .then(
                 async (tx) => {
@@ -306,17 +313,24 @@ function Dashboard() {
                     getLatestUserAccount();
                 }
             )
-            .catch(console.error)
+            .catch(e => {
+                console.error;
+                setDisplayLoader(false);
+            })
     }
 
     const approveMyCollateral = (_token: string, _symbol: string) => () => {
+        setDisplayLoader(true);
         contract
             .approveAsCollateralOnlyIfAllowedInAave(_token)
             .then((tx) => {
                 console.log("transaction for allowing token: ", _token, _symbol, tx);
                 getLatestUserAccount(0.3);
             })
-            .catch(console.error)
+            .catch(e => {
+                console.error;
+                setDisplayLoader(true);
+            })
     }
 
     
@@ -634,7 +648,9 @@ function Dashboard() {
 
 
     return (
-        <div className="dashboard max-w-7xl mx-auto px-6">
+        <div className="dashboard max-w-7xl mx-auto px-6 overflow-hidden">
+
+{ displayLoader && <div className="absolute w-full"><CircularProgress isIndeterminate color="purple.500"/></div> }
             {isValidUser && <Tab.Group
                 defaultIndex={0}
                 onChange={index => {
@@ -650,7 +666,7 @@ function Dashboard() {
                 </Tab.Panels>
             </Tab.Group>}
 
-            {!isValidUser && <div className="text-xl dark:text-white mt-4">No data found for the selected wallet address.</div>}
+            {!isValidUser && <div className="text-xl dark:text-white mt-24">No data found for the selected wallet address.</div>}
         </div>
     )
 }
