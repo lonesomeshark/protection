@@ -220,7 +220,7 @@ contract Subscribers {
 
   modifier checkHF(uint256 _threshold) {
     require(_threshold >= 100 * 10**16, 'threshold below 1');
-    require(_threshold <= 101 * 10**16, 'threshold too high, above 1.1');
+    require(_threshold <= 150 * 10**16, 'threshold too high, above 1.5');
     _;
   }
   modifier hasAccount() {
