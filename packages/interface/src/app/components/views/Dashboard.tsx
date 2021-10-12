@@ -421,7 +421,7 @@ function Dashboard() {
             <div className="flex justify-between px-10 items-center">
                 <div className="space-y-2">
                     <div className="opacity-50 text-lg">Current Health Factor</div>
-                    <div className="text-5xl text-center">{userPosition?.healthFactor}</div>
+                    <div className="text-center text-xl">{(userPosition?.healthFactor)?.toFixed(2)}</div>
                 </div>
                 <div className="lg:pl-20 pl-10">
                     <svg width="52" height="24" viewBox="0 0 52 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -432,8 +432,8 @@ function Dashboard() {
                     <div className="opacity-50 text-lg pl-10">Current Liquidation Threshold</div>
 
                     {/* to be made input */}
-                    <div className="text-5xl max-w-min ml-10">
-                        <input name="threshold" value={customThreshold} onChange={(e) => setCustomThreshold(e.target.value)} className="w-28" />
+                    <div className="text-xl max-w-min ml-10">
+                        <input name="threshold " value={customThreshold} onChange={(e) => setCustomThreshold(e.target.value)} className="w-28" />
                     </div>
                 </div>
             </div>
@@ -443,9 +443,9 @@ function Dashboard() {
     const registerWithUsTab = (
         <>
             {setThreshold}
-            <div className="pl-4 pb-8">
+            <div className="px-10 pb-8">
                 <div className="pb-2 opacity-50">Set your gas limit for the flash loan contract</div>
-                <div className="pb-4 opacity-50 text-5xl max-w-min">
+                <div className="pb-4 opacity-50 text-xl max-w-min">
                     <input name="gasLimit" value={custmGasLimit} onChange={(e) => setCustmGasLimit(e.target.value)} className="w-72" />
                 </div>
                     { userAccount && !userAccount?.payback &&
@@ -460,12 +460,12 @@ function Dashboard() {
         </>
     );
 
-const collateralsTab = (<div key={userAccount?.collaterals.length} className="pt-6 pl-4 pb-8 space-x-2 space-y-2">
+const collateralsTab = (<div key={userAccount?.collaterals.length} className="pl-4 space-x-2 space-y-2">
     <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan and start monitoring your health ❤️</div>
     { userData && userData.length>0 && userData?.map(token=>{
         return <button 
         key={token.token+""+ userAccount?.collaterals.length} 
-        className={` px-3 py-2 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'bg-green cursor-default opacity-50 text-gray' : 'text-white bg-purple'}`} 
+        className={` px-3 py-2 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'border border-green cursor-default text-green shadow-md' : 'text-purple border border-purple'}`} 
         onClick={approveMyCollateral(token.token, token.symbol)} 
         disabled={userAccount?.collaterals.includes(token.token)}>{token.symbol}</button>
     })
@@ -511,7 +511,7 @@ const dashboard = (
                         : <div className="text-red-type1">are not protected</div>
                     }
                 </div>
-                { userAccount && userAccount.status == EStatus.ACTIVATED && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-10 z-5" />}
+                { userAccount && userAccount.status == EStatus.ACTIVATED && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-8 z-5" />}
                 
             </div>
 
@@ -523,7 +523,7 @@ const dashboard = (
                             <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount && userAccount?.collaterals.length >= 1 ? false : true} className="dark:text-white">3. Monitoring</ChakraTab>
 
                         </TabList>
-                        <TabPanels className="bg-secondary">
+                        <TabPanels className="bg-secondary h-56 rounded-b-md">
                             <TabPanel>{registerWithUsTab}</TabPanel>
                             <TabPanel>{collateralsTab}</TabPanel>
                             <TabPanel>{monitoringTab}</TabPanel>
