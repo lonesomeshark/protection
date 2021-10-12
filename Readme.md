@@ -16,6 +16,29 @@ Created with https://www.ascii-art-generator.org/
 
 LonesomeShark is a FlashLoan Liquidation Protection Platform that protects DeFi borrowers from costly liquidations by giving them a simple, friendly, and easy to use UI to monitor their health factor.
 
+#### Project Setup in Local System
+
+Step 1.
+
+clone the repo -
+```
+ https://github.com/lonesomeshark/protection.git
+```
+Step 2.
+
+At the root directory, run the following command
+```
+yarn install
+```
+
+Step 3.
+
+Run the below command, to load the app
+``` 
+yarn start
+```
+
+
 #### Deployed - Kovan Testnet (beta release only)
 Live demo: https://lonesomeshark.xyz/ 
 
