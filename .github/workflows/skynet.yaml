@@ -2,7 +2,11 @@ name: Deploy to Skynet
 
 on:
   push:
+<<<<<<< HEAD
     branches: [master]
+=======
+    branches: [develop]
+>>>>>>> f334b032eda40cc1494f101edc1d18aa9aa34a00
 
 jobs:
   build:
