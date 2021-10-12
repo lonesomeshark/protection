@@ -14,6 +14,9 @@
 
 LonesomeShark is a FlashLoan Liquidation Protection Platform that protects DeFi borrowers from costly liquidations by giving them a simple, friendly, and easy to use UI to monitor their health factor.
 
+Why lonesome shark? Because no more shark loans needed, flashloans replace them :)
+Shark loans are getting lonely because of this!
+
 #### Deployed - Kovan Testnet (beta release only)
 
 Live demo: https://lonesomeshark.xyz/
