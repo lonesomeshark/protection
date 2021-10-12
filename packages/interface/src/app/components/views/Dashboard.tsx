@@ -250,13 +250,13 @@ function Dashboard() {
                     if (data.threshold + "" != customThreshold && data.threshold > 0) {
                         setCustomThreshold(data.threshold + "");
                     }
-                    setDisplayLoader(false);
+                    // setDisplayLoader(false);
                 })
                 .catch(e => {
                     console.log("error getting user account");
                     console.error;
                     setIsValidUser(false);
-                    setDisplayLoader(false);
+                    // setDisplayLoader(false);
                 })
         }, seconds * 1000);
     }
@@ -316,6 +316,7 @@ function Dashboard() {
                     console.log("sign up with us transaction: ", tx)
                     await tx.wait();
                     setAtIndex(1);
+                    setDisplayLoader(false);
                     getLatestUserAccount();
                 }
             )
@@ -329,13 +330,17 @@ function Dashboard() {
         setDisplayLoader(true);
         contract
             .approveAsCollateralOnlyIfAllowedInAave(_token)
-            .then((tx) => {
+            .then(async(tx) => {         
+                await tx.wait();
                 console.log("transaction for allowing token: ", _token, _symbol, tx);
+                setDisplayLoader(false);
                 getLatestUserAccount(0.3);
+                
+                
             })
             .catch(e => {
                 console.error;
-                setDisplayLoader(true);
+                setDisplayLoader(false);
             })
     }
 
