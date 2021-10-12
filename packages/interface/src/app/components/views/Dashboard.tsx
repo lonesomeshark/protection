@@ -532,7 +532,7 @@ const dashboard = (
                             <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount && userAccount?.collaterals.length >= 1 ? false : true} className="dark:text-white">3. Monitoring</ChakraTab>
 
                         </TabList>
-                        <TabPanels className="bg-secondary h-56 rounded-b-md">
+                        <TabPanels className="bg-secondary md:h-56 rounded-b-md">
                             <TabPanel>{registerWithUsTab}</TabPanel>
                             <TabPanel>{collateralsTab}</TabPanel>
                             <TabPanel>{monitoringTab}</TabPanel>
