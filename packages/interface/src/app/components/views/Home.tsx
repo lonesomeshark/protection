@@ -4,10 +4,26 @@ import star from "../../assets/star.png";
 import wallet from "../../assets/wallet.png";
 import shield from "../../assets/shield-full.png";
 import { Link } from "react-router-dom";
+import {
+    Alert,
+    AlertIcon,
+    AlertTitle,
+    AlertDescription,
+} from "@chakra-ui/react";
 
-function Home() {
+type Props = {
+    connected: boolean,
+}
+
+function Home({ connected }: Props) {
+
     return (
         <div className="md:px-40 lg:px-72 space-y-8 md:mt-10 dark:bg-black-type1">
+            { !connected && <Alert status="error">
+                <AlertIcon />
+                <AlertTitle mr={2}>Wallet not connected!</AlertTitle>
+                <AlertDescription>Please connect wallet to continue</AlertDescription>
+            </Alert> }
             <div className="rounded-md items-center space-y-10 pb-14 pt-28 lg:px-52"
                 style={{
                     backgroundImage: `url(${bg})`,
@@ -19,7 +35,7 @@ function Home() {
                     Helping borrowers protect their collateral from liquidation
                 </div>
                 <div className="flex justify-center space-x-4">
-                    <button className="text-purple bg-white rounded-md px-3 py-2 font-semibold"><Link to={"/dashboard"}>Launch App</Link></button>
+                    <button className="text-purple bg-white rounded-md px-3 py-2 font-semibold"><Link to={`${connected ? "/dashboard" : "/"}`}>Launch App</Link></button>
                     {/* <button className="text-purple border border-purple rounded-md px-3 py-2">How does it work?</button> */}
                 </div>
             </div>
@@ -42,7 +58,7 @@ function Home() {
                 <div className="bg-secondary rounded-md space-y-6 pt-6 pb-12 min-w-20 px-16 max-w-sm mx-auto md:mx-0">
                     <div className="text-gray-type1">Step 3:</div>
                     <div className="flex justify-center"><img src={shield} alt="" className="scale-50" /></div>
-                    <div>Click on “Protect my <br/>assets”</div>
+                    <div>Click on “Protect my <br />assets”</div>
                 </div>
             </div>
 
