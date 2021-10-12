@@ -487,6 +487,7 @@ const collateralsTab = (<div key={userAccount?.collaterals.length} className="pl
         >
         <button
         className={` px-3 py-2 rounded-md text-white bg-purple`} 
+        onClick={() => setAtIndex(2)}
         >
             NEXT
         </button>
