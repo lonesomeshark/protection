@@ -288,10 +288,11 @@ function Dashboard() {
         console.log({customThreshold, custmGasLimit});
         contract.registerHF(val,{ value: custmGasLimit})
             .then(
-                (tx)=>{
+                async (tx) =>{
                     console.log("sign up wiht us transaction: ",tx)
+                    await tx.wait();
                     setAtIndex(1);
-                    getLatestUserAccount(0.3);
+                    getLatestUserAccount();
                 }
             )
             .catch(console.error)
@@ -382,17 +383,19 @@ function Dashboard() {
         if(userAccount?.status != EStatus.ACTIVATED){
             linkToken
             .approve(registryAddress, ethers.utils.parseEther("1.0"))
-            .then((tx)=>{
+            .then(async (tx)=>{
                 console.log("transaction from approving link", tx);
+                await tx.wait()
                 const registryContract = (new ethers.Contract(registryAddress, registryArtifact.abi, signer)) as KeeperRegistryBaseInterface
                 registryContract.addFunds(id, ethers.utils.parseEther("1.0"))
-                .then((tx)=>{
+                .then(async (tx)=>{
                     console.log("added funds to registry", tx);
                     contract
                     .startMonitoring()
-                    .then((tx)=>{
+                    .then(async(tx)=>{
                         console.log("monitoring started, ", tx);
-                        getLatestUserAccount(5)
+                        await tx.wait()
+                        getLatestUserAccount()
                     })
                 })
                 .catch(console.error)
@@ -404,8 +407,9 @@ function Dashboard() {
     const pauseMonitoring = async () =>{
         console.log("pause monitoring");
         contract.pauseMonitoring()
-        .then((tx)=>{
+        .then(async (tx)=>{
             console.log("tx pause monitoring", tx)
+            await tx.wait();
             getLatestUserAccount()
         })
         .catch(console.error)
@@ -502,7 +506,7 @@ const dashboard = (
             <div className="col-span-2">
                     <Tabs variant="enclosed" index={atIndex}>
                         <TabList>
-                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. {userAccount && userAccount?.payback? `Add more gas or update Treshold: ${userAccount.threshold}?`: "Register with us"}</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. {userAccount && userAccount?.payback? `Add more gas or update HF Treshold: ${userAccount.threshold}?`: "Register with us"}</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(1)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">2. Collaterals ( {userAccount?.collaterals.length} )</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">3. Monitoring</ChakraTab>
 

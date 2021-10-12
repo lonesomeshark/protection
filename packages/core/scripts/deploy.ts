@@ -37,6 +37,7 @@ async function main() {
     chainlinkRegistryAddress,
     linkAddress
   );
+
   console.log('monitor deployed', chalk.blue(monitor.address));
 
   await subscribers.updateLoneSomeSharkAddress(monitor.address);

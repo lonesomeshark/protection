@@ -23,7 +23,7 @@ contract Subscribers {
   }
   struct Account {
     Status status;
-    address payback;
+    address payable payback;
     uint256 threshold;
     address[] collaterals;
   }
@@ -243,11 +243,11 @@ contract Subscribers {
       msg.sender
     );
     accounts[msg.sender].payback = address(_payback);
-    payable(accounts[msg.sender].payback).call{value: msg.value};
+    payable(accounts[msg.sender].payback).transfer(msg.value);
   }
 
   function addMoreGas() public payable hasAccount {
-    payable(accounts[msg.sender].payback).call{value: msg.value};
+    payable(accounts[msg.sender].payback).transfer(msg.value);
   }
 
   function approveAsCollateralOnlyIfAllowedInAave(address _token) public {

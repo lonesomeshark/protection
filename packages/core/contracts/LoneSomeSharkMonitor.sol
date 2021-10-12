@@ -89,7 +89,7 @@ contract LoneSomeSharkMonitor is KeeperCompatibleInterface {
           unhealthy_accounts[i]
         );
         if (_assets.length == _amounts.length) {
-          address _payback = subscribers.getAccount(unhealthy_accounts[i]).payback;
+          address payable _payback = subscribers.getAccount(unhealthy_accounts[i]).payback;
           try PaybackLoan(_payback).flashLoanCall(unhealthy_accounts[i], _assets, _amounts) {
             emit SuccessFlashEvent(unhealthy_accounts[i], _assets, _amounts);
           } catch {
