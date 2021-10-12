@@ -461,7 +461,7 @@ function Dashboard() {
     );
 
 const collateralsTab = (<div key={userAccount?.collaterals.length} className="pt-6 pl-4 pb-8 space-x-2 space-y-2">
-    <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan</div>
+    <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan and start monitoring your health ❤️</div>
     { userData && userData.length>0 && userData?.map(token=>{
         return <button 
         key={token.token+""+ userAccount?.collaterals.length} 
@@ -469,6 +469,18 @@ const collateralsTab = (<div key={userAccount?.collaterals.length} className="pt
         onClick={approveMyCollateral(token.token, token.symbol)} 
         disabled={userAccount?.collaterals.includes(token.token)}>{token.symbol}</button>
     })
+    }
+    { userAccount && userAccount.collaterals.length >= 1 && (
+        <div 
+        className="p-2 m-1"
+        >
+        <button
+        className={` px-3 py-2 rounded-md text-white bg-purple`} 
+        >
+            NEXT
+        </button>
+        </div>
+        )
     }
 </div>);
 
@@ -508,12 +520,11 @@ const dashboard = (
                         <TabList>
                             <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. {userAccount && userAccount?.payback? `Add more gas or update HF Treshold: ${userAccount.threshold}?`: "Register with us"}</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(1)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">2. Collaterals ( {userAccount?.collaterals.length} )</ChakraTab>
-                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">3. Monitoring</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount && userAccount?.collaterals.length >= 1 ? false : true} className="dark:text-white">3. Monitoring</ChakraTab>
 
                         </TabList>
                         <TabPanels className="bg-secondary">
                             <TabPanel>{registerWithUsTab}</TabPanel>
-                            {/* <TabPanel>{setThreshold}</TabPanel> */}
                             <TabPanel>{collateralsTab}</TabPanel>
                             <TabPanel>{monitoringTab}</TabPanel>
                         </TabPanels>
