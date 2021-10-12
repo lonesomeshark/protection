@@ -14,7 +14,7 @@
     "build:interface": "yarn workspace @lonesomeshark/interface build",
     "start:interface": "yarn workspace @lonesomeshark/interface start",
     "test": "yarn test:core && yarn test:interface",
-    "deploy:core": "yarn workspace @lonesomeshark/core deploy",
+    "deploy:core": "yarn format:fix && yarn workspace @lonesomeshark/core deploy",
     "test:local": "yarn test:local:core",
     "test:interface": "yarn workspace @lonesomeshark/interface test",
     "test:core": "yarn workspace @lonesomeshark/core test",
@@ -32,7 +32,8 @@
     "format:core": "yarn workspace @lonesomeshark/core format",
     "compile": "yarn workspace @lonesomeshark/core hardhat compile",
     "clean": "rm -rf */**/yarn* node_modules */**//node_modules && yarn compile",
-    "deploy:interface": "yarn build && yarn workspace @lonesomeshark/interface deploy"
+    "deploy:interface": "yarn build && yarn workspace @lonesomeshark/interface deploy",
+    "fork": "yarn workspace @lonesomeshark/core fork"
   },
   "devDependencies": {
     "husky": "^7.0.2"

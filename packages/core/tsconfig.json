@@ -20,6 +20,6 @@
       "./src",
       "./scripts",
       "./script_interactions",
-      "./.eslintrc.js"
-, "utils/utils.ts"    ]
+      "./.eslintrc.js", 
+      "utils/index.ts"    ]
   }

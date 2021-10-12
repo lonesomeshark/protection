@@ -3,7 +3,16 @@ import { ethers } from 'hardhat';
 import { Greeter, Greeter__factory } from '../typechain';
 import { LocalSubscriber__factory } from '../typechain/factories/LocalSubscriber__factory';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-
+import { Payer__factory } from '../typechain/factories/Payer__factory';
+import { networkAddresses } from '../utils';
+const {
+  providerAddress,
+  aaveProvider,
+  uniswapRouterAddress,
+  wethAddress,
+  linkAddress,
+  chainlinkRegistryAddress,
+} = networkAddresses.kovan;
 let greeter: Greeter;
 let owner: SignerWithAddress, accounts: SignerWithAddress[];
 describe('local Greeter', () => {
@@ -165,5 +174,26 @@ describe('local Greeter', () => {
     const nodata = await greeter.connect(accounts[1]).getAccount();
 
     console.log({ nodata });
+  });
+
+  it('should pay 1 eth', async () => {
+    const pay = await new Payer__factory(owner).deploy(chainlinkRegistryAddress, linkAddress);
+    const receiver = await new Payer__factory(owner).deploy(chainlinkRegistryAddress, linkAddress);
+    let tx = await owner.sendTransaction({
+      to: receiver.address,
+      value: ethers.utils.parseEther('1.0'),
+    });
+    let bal = await receiver.getMyBalance();
+    let bal1 = await ethers.provider.getBalance(receiver.address);
+    await tx.wait();
+    console.log('balance from receiver: ', ethers.utils.formatEther(bal));
+    console.log('balance provider of receiver: ', ethers.utils.formatEther(bal1));
+    tx = await pay.payEth(receiver.address, { value: '100000' });
+    await tx.wait();
+    bal = await receiver.getMyBalance();
+    bal1 = await ethers.provider.getBalance(receiver.address);
+
+    console.log('balance from receiver: ', ethers.utils.formatEther(bal));
+    console.log('balance provider of receiver: ', ethers.utils.formatEther(bal1));
   });
 });

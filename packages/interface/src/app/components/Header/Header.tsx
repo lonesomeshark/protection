@@ -58,7 +58,7 @@ function Header({ address, network, balance, connected, isDark, toggleTheme, con
                         <div className="md:hidden flex items-center space-x-2">
                             <div>
                                 {!connected && <button className="bg-purple text-white px-4 py-2 rounded-md" onClick={connect}>Connect</button>}
-                                {connected && <button className="bg-purple text-white px-4 py-2 rounded-md" onClick={disconnect}>{address}</button>}
+                                {connected && <button className="border border-purple text-purple px-1.5 py-1 rounded-md text-sm" onClick={disconnect}>{address}</button>}
                             </div>
                             <div>
                                 <button onClick={openMenu}><MenuIcon height="20" /></button>
