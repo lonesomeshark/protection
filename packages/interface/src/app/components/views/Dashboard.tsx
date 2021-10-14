@@ -10,7 +10,15 @@ import wbtcIcon from "../../assets/WBTC.svg";
 import shield from "../../assets/shield.png";
 import { Tab as ChakraTab, Tabs, TabList, TabPanel, TabPanels } from "@chakra-ui/tabs";
 import { Progress } from "@chakra-ui/react";
-import { CircularProgress } from "@chakra-ui/react"
+import { CircularProgress } from "@chakra-ui/react";
+import { Tooltip } from "@chakra-ui/react";
+import axios from "axios";
+import {
+    Alert,
+    AlertIcon,
+    AlertTitle,
+    AlertDescription,
+} from "@chakra-ui/react";
 
 import { ethers } from "ethers";
 import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface, PaybackLoan } from '@lonesomeshark/core/typechain';
@@ -91,11 +99,41 @@ const icons = {
     "UNI": ethIcon,
     "AMPL": ethIcon,
 }
+
+interface GeckoETHData {
+    ethereum: {
+        usd: string
+    }
+}
+
+const getPrice = async (symbol: string) => {
+    try {
+        return axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${symbol}&vs_currencies=usd`).then(res => {
+            const d: GeckoETHData = res.data;
+            return d.ethereum.usd;
+        })
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+const getDollarValue = (symbol: string, value: number) => {
+    if (value === undefined) return;
+    try {
+        return getPrice(symbol).then(res => {
+            return value * (Number(res));
+        })
+    } catch (err) {
+        console.log(err)
+    }
+}
+
 interface IDeposit {
     asset: "ETH" | string,
     assetIcon: typeof ethIcon,
     value: string,
-    apy: string
+    apy: string,
+    collaterized: boolean
 }
 
 interface IDebt {
@@ -120,7 +158,8 @@ const parseDeposit = (d: IUserReserveData): IDeposit => ({
     asset: d.symbol,
     assetIcon: (icons as any)[d.symbol] || ethIcon,
     value: (d.currentATokenBalance).toFixed(3) + "",
-    apy: (d.liquidityRate / 10000000).toFixed(3) + "%"
+    apy: (d.liquidityRate / 10000000).toFixed(3) + "%",
+    collaterized: d.usageAsCollateralEnabled
 })
 
 function Dashboard() {
@@ -232,6 +271,19 @@ function Dashboard() {
 
     }, [userAccount?.payback])
 
+
+
+    // useEffect(() => {
+    //     if(userPosition?.totalCollateralETH !== undefined) {
+    //         try {
+    //             getDollarValue("ethereum", userPosition.totalCollateralETH)?.then( res => setAssetInUSD(res.toFixed(3).toString()));
+    //         } catch(err) {
+    //             console.log(err)
+    //         }
+    //     }
+
+    // },[userPosition]);
+
     const getLatestUserAccount = (seconds = 0) => {
         console.log("getAccount()")
         setTimeout(() => {
@@ -271,13 +323,15 @@ function Dashboard() {
                 asset: "ETH",
                 assetIcon: ethIcon,
                 value: "12,232.232",
-                apy: "23%"
+                apy: "23%",
+                collaterized: true
             },
             {
                 asset: "USDC",
                 assetIcon: usdcIcon,
                 value: "12,232.232",
-                apy: "23%"
+                apy: "23%",
+                collaterized: true
             }
         ];
     const debts = userData && userData.length > 0 ? userData?.filter(filterDebt).map(parseDebt) : [
@@ -328,15 +382,16 @@ function Dashboard() {
 
     const approveMyCollateral = (_token: string, _symbol: string) => () => {
         setDisplayLoader(true);
+        // const collateralVal = userData.
         contract
             .approveAsCollateralOnlyIfAllowedInAave(_token)
-            .then(async(tx) => {         
+            .then(async (tx) => {
                 await tx.wait();
                 console.log("transaction for allowing token: ", _token, _symbol, tx);
                 setDisplayLoader(false);
                 getLatestUserAccount(0.3);
-                
-                
+
+
             })
             .catch(e => {
                 console.error;
@@ -344,10 +399,10 @@ function Dashboard() {
             })
     }
 
-    
+
     const depositView = deposits ? deposits.map((item, index) => {
         return (
-            <div key={index} className="grid grid-cols-3 pl-4 pr-16 py-2 border border-gray border-opacity-50 border-t-0 dark:text-white">
+            <div key={index} className={`grid grid-cols-3 pl-4 pr-16 py-2 border border-gray border-opacity-50 border-t-0 dark:text-white ${item.collaterized ? 'bg-green bg-opacity-20 dark:bg-opacity-80' : 'bg-transparent'}`}>
                 <div className="text-left flex space-x-2">
                     <div><img src={item.assetIcon} alt="" /></div>
                     <div>{item.asset}</div>
@@ -526,27 +581,30 @@ function Dashboard() {
             <div className="col-span-2 border-r-2 border-black border-opacity-25 text-sm">
                 <div className="opacity-50">List of tokens available for selection</div>
                 <div className="space-x-2 space-y-2 text-xs">
-                {userData && userData.length > 0 && userData?.map(token => {
-            return <button
-                key={token.token + "" + userAccount?.collaterals.length}
-                className={` px-1.5 py-1 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'hidden' : 'text-purple border border-purple'}`}
-                onClick={approveMyCollateral(token.token, token.symbol)}
-                disabled={userAccount?.collaterals.includes(token.token)}>{token.symbol}</button>
-        })
-        }
+                    {userData && userData.length > 0 && userData?.map(token => {
+                        return <Tooltip key={token.token + "" + userAccount?.collaterals.length} label="Collaterized on AAVE" aria-label="A tooltip">
+                            <button
+
+                                className={` px-1.5 py-1 rounded-md  ${token.usageAsCollateralEnabled ? 'text-purple border-purple' : 'text-gray-type1 border-gray-type1'} ${userAccount?.collaterals.includes(token.token) ? 'hidden' : 'border'}`}
+                                onClick={approveMyCollateral(token.token, token.symbol)}
+                                disabled={displayLoader || !token.usageAsCollateralEnabled}>{token.symbol}</button>
+                        </Tooltip>
+
+                    })
+                    }
                 </div>
             </div >
             <div className="pl-4">
                 <div className="text-sm opacity-50">Selected Tokens</div>
                 <div className="space-x-2 space-y-2 text-xs">
-                {userData && userData.length > 0 && userData?.map(token => {
-            return <button
-                key={token.token + "" + userAccount?.collaterals.length}
-                className={` px-1.5 py-1 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'text-green border border-green shadow-md' : 'hidden'}`}
-               
-                disabled>{token.symbol}</button>
-        })
-        }
+                    {userData && userData.length > 0 && userData?.map(token => {
+                        return <button
+                            key={token.token + "" + userAccount?.collaterals.length}
+                            className={` px-1.5 py-1 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'text-green border border-green shadow-md' : 'hidden'}`}
+
+                            disabled>{token.symbol}</button>
+                    })
+                    }
                 </div>
             </div>
             <div>
@@ -571,6 +629,7 @@ function Dashboard() {
                 <button
                     className={` px-3 py-2 rounded-md text-white bg-purple`}
                     onClick={() => setAtIndex(2)}
+                    disabled={displayLoader}
                 >
                     NEXT
                 </button>
@@ -582,9 +641,9 @@ function Dashboard() {
     const monitoringTab = (
         <div className="pl-4 pb-11">
             <div className="pb-2 opacity-50">Send 1 LINK to the lonesome shark monitoring contract to watch out for your health</div>
-            { isMonitoring && <div className="py-4 space-y-4">
-            <div className="flex justify-center"><CircularProgress isIndeterminate color="purple.500"/></div>
-                <Progress colorScheme="green" size="lg" value={progressVal} hasStripe/>
+            {isMonitoring && <div className="py-4 space-y-4">
+                <div className="flex justify-center"><CircularProgress isIndeterminate color="purple.500" /></div>
+                <Progress colorScheme="green" size="lg" value={progressVal} hasStripe />
             </div>}
             {
                 (userAccount && userAccount?.status != EStatus.ACTIVATED)
@@ -599,14 +658,14 @@ function Dashboard() {
 
     const dashboard = (
         <div>
-            <div className="md:grid grid-cols-3 mt-10 text-left gap-8 space-y-4 md:space-y-0">
+            <div className="md:grid grid-cols-3 mt-4 text-left gap-8 space-y-4 md:space-y-0">
                 <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
 
                     <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
                         <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
-                        <div className="text-semibold text-5xl">{userPosition?.totalDebtETH || 0} ETH</div>
+                        <div className="text-semibold text-5xl">{(userPosition?.totalCollateralETH)?.toFixed(3) || 0} ETH</div>
                         {userAccount && userAccount.status == EStatus.ACTIVATED
-                            ? <div className="text-green">are protected</div>
+                            ? <div className="text-green">70% of deposits are protected</div>
                             : <div className="text-red-type1">are not protected</div>
                         }
                     </div>
@@ -633,7 +692,7 @@ function Dashboard() {
 
             </div>
 
-            <div className="lg:flex mt-10 lg:space-x-8">
+            <div className="lg:flex mt-10 lg:space-x-8 space-y-4 lg:space-y-0">
                 <div className="space-y-4 max-w-screen-sm">
                     <div className="opacity-50 text-left dark:text-white">YOUR DEPOSITS</div>
                     <div>
@@ -643,6 +702,7 @@ function Dashboard() {
                             <div>APY</div>
                         </div>
                         {depositView}
+                        {deposits && deposits.length > 0 && <div className="text-xs text-left pt-2 dark:text-white"><i>Note: Assets collaterized on AAVE has green background</i></div>}
                     </div>
                 </div>
                 <div className="space-y-4 max-w-screen-sm">
@@ -661,7 +721,7 @@ function Dashboard() {
         </div>
     );
 
-    const history = (<div className="pt-6 min-w-max">
+    const history = (<div className="pt-4 min-w-max">
         <div className="flex justify-between space-x-24 bg-secondary pl-4 pr-16 py-2 border border-gray border-opacity-50 rounded-t-md font-semibold">
             <div>Time stamp</div>
             <div>Assets Liquidated</div>
@@ -676,12 +736,17 @@ function Dashboard() {
     return (
         <div className="dashboard max-w-7xl mx-auto px-6 overflow-hidden">
 
-{ displayLoader && <div className="absolute w-full"><CircularProgress isIndeterminate color="purple.500"/></div> }
+            {displayLoader && <div className="absolute w-full"><CircularProgress isIndeterminate color="purple.500" /></div>}
             {isValidUser && <Tab.Group
                 defaultIndex={0}
                 onChange={index => {
                     console.log(index)
                 }}>
+                {isValidUser && deposits && deposits.length === 0 && <Alert status="error">
+                    <AlertIcon />
+                    <AlertTitle mr={2}>No AAVE deposits found on AAVE testnet for the selected wallet address.</AlertTitle>
+                    <AlertDescription>Also, make sure to connect to Kovan testnet.</AlertDescription>
+                </Alert>}
                 <Tab.List className="flex">
                     <Tab className={({ selected }) => selected ? "px-2 py-1 text-purple font-semibold" : "px-2 py-1 dark:text-white font-semibold"}>Dashboard</Tab>
                     <Tab className={({ selected }) => selected ? "px-2 py-1 text-purple font-semibold" : "px-2 py-1 dark:text-white font-semibold"}>History</Tab>
@@ -692,7 +757,7 @@ function Dashboard() {
                 </Tab.Panels>
             </Tab.Group>}
 
-            {!isValidUser && <div className="text-xl dark:text-white mt-24">No data found for the selected wallet address.</div>}
+            {/* {!isValidUser && <div className="text-xl dark:text-white mt-24">No AAVE deposits found on AAVE testnet for the selected wallet address. <br/> Also, make sure to connect to Kovan testnet.</div>} */}
         </div>
     )
 }
