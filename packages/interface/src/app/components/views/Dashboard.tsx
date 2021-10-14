@@ -89,7 +89,7 @@ const icons = {
     "MKR": ethIcon,
     "REN": ethIcon,
     "SNX": ethIcon,
-    "sUSD": usdcIcon,
+    "sUSD": ethIcon,
     "TUSD": ethIcon,
     "USDT": ethIcon,
     "WBTC": wbtcIcon,
