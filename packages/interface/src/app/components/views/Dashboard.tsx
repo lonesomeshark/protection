@@ -121,29 +121,26 @@ const getDollarValue = (symbol: string, value: number) => {
     }
 }
 
-const calculateProtectedDeposit = async(userData: IUserReserveData[], userAccount: IUserAccount, userPosition: IUserPosition) => {
-    const totalDepositUSD = await getDollarValue("ethereum", userPosition.totalCollateralETH) 
+const calculateProtectedDeposit = async (userData: IUserReserveData[], userAccount: IUserAccount, userPosition: IUserPosition) => {
+    const totalDepositUSD = await getDollarValue("ethereum", userPosition.totalCollateralETH)
     const collateralsUserData = userData.filter(item => userAccount.collaterals.includes(item.token));
     const actions = collateralsUserData.map(async item => await getDollarValue((item.symbol).toLowerCase(), item.currentATokenBalance));
 
     const result = Promise.all(actions);
 
-    result.then(res => {
-        const sum  = (res as number[]).reduce((a, b) => a + b, 0);
-        if(totalDepositUSD !== undefined) {
-            const percentage = (sum / totalDepositUSD) * 100;
-            return percentage.toFixed(2).toString();
-        }
-        else {
-            console.log("TOTAL DEPOSIT NOT FOUND");
-            return "";
+    const pc = result.then(res => {
+        const sum = (res as number[]).reduce((a, b) => a + b, 0);
+        if (totalDepositUSD !== undefined && totalDepositUSD !== 0) {
+            const percentage = (sum * 100) / totalDepositUSD;
+            return percentage.toFixed(3);
         }
     }).catch(e => {
         console.error;
+        console.log("ERROR FOR DATA");
         return "";
     });
 
-    // return (totalDepositUSD as number).toFixed(3).toString(); 
+    return pc;
 }
 
 interface IDeposit {
@@ -295,18 +292,15 @@ function Dashboard() {
     useEffect(() => {
         if (userData && userAccount?.collaterals && userAccount.collaterals.length > 0 && userPosition?.totalCollateralETH !== undefined) {
             try {
-               calculateProtectedDeposit(userData, userAccount, userPosition).then( res => {
-                   if(res !== undefined) setProtectedDeposit(res as string);
-                   
-               })
-               
-                
+                console.log("calling CALCULATE PROTECTED DEPOSIT");
+                calculateProtectedDeposit(userData, userAccount, userPosition).then(res => {
+                    console.log("THE VALUE OF PROTECTED DEPOSIT ", res);
+                    if (res !== undefined) setProtectedDeposit(res as string);
+                })
             } catch (err) {
                 console.log(err)
             }
-            
         }
-
     }, [userAccount, userPosition]);
 
     const getLatestUserAccount = (seconds = 0) => {
