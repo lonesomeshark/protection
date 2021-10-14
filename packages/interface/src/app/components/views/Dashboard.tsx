@@ -131,7 +131,7 @@ const calculateProtectedDeposit = async(userData: IUserReserveData[], userAccoun
     result.then(res => {
         const sum  = (res as number[]).reduce((a, b) => a + b, 0);
         if(totalDepositUSD !== undefined) {
-            const percentage = sum / totalDepositUSD;
+            const percentage = (sum / totalDepositUSD) * 100;
             return percentage.toFixed(2).toString();
         }
         else {
@@ -583,7 +583,7 @@ function Dashboard() {
             {setThreshold}
             <div className="px-10 pb-8">
                 <div className="pb-2 opacity-50">Set your gas limit for the flash loan contract</div>
-                <div className="pb-4 opacity-50 text-xl max-w-min">
+                <div className="pb-4 text-xl max-w-min">
                     <input name="gasLimit" value={custmGasLimit} onChange={(e) => setCustmGasLimit(e.target.value)} className="bg-secondary w-28" />
                 </div>
                 {(userAccount && !userAccount?.payback) ?
