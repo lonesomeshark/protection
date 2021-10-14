@@ -25,6 +25,7 @@ import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface,
 
 import ierc20Artifact from "@lonesomeshark/core/artifacts/@aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol/IERC20.json"
 import registryArtifact from "@lonesomeshark/core/artifacts/contracts/interfaces/KeeperRegistryInterface.sol/KeeperRegistryBaseInterface.json"
+import { HistoryTab } from "..";
 
 
 const getContract = (contract: "LoneSomeSharkMonitor" | "Subscribers", network: 'kovan') => {
@@ -362,22 +363,22 @@ function Dashboard() {
         }
     ];
 
-    const mockhistory = [
-        {
-            timestamp: "10.10.2021 06:30",
-            liquidated: "ETH,DAI,YFI",
-            fees: "0.05 ETH",
-            collateral: "$ 12,232.34324",
-            transactionHash: "0xc1234wdsdcsas1233dasdasd"
-        },
-        {
-            timestamp: "10.11.2021 06:30",
-            liquidated: "UNI,BAT",
-            fees: "0.05 ETH",
-            collateral: "$ 12,232.34324",
-            transactionHash: "0xc1234wdsdcsas1233dasdasd"
-        }
-    ];
+    // const mockhistory = [
+    //     {
+    //         timestamp: "10.10.2021 06:30",
+    //         liquidated: "ETH,DAI,YFI",
+    //         fees: "0.05 ETH",
+    //         collateral: "$ 12,232.34324",
+    //         transactionHash: "0xc1234wdsdcsas1233dasdasd"
+    //     },
+    //     {
+    //         timestamp: "10.11.2021 06:30",
+    //         liquidated: "UNI,BAT",
+    //         fees: "0.05 ETH",
+    //         collateral: "$ 12,232.34324",
+    //         transactionHash: "0xc1234wdsdcsas1233dasdasd"
+    //     }
+    // ];
     const protectMyAssets = () => {
         console.log("protecting my assets: ");
         const val = formatTreshold(customThreshold);
@@ -448,17 +449,17 @@ function Dashboard() {
         )
     }) : null;
 
-    const historyView = mockhistory ? mockhistory.map((item, index) => {
-        return (
-            <div key={index} className="grid grid-cols-5 py-3 pl-4 border border-gray border-opacity-50 border-t-0 dark:text-white dark:bg-black-type1">
-                <div className="text-left flex space-x-2">{item.timestamp}</div>
-                <div className="text-left pl-0 sm:pl-8 lg:pl-0">{item.liquidated}</div>
-                <div className="lg:text-left sm:pl-10">{item.fees}</div>
-                <div className="text-left pl-4">{item.collateral}</div>
-                <div className="lg:text-left">{item.transactionHash}</div>
-            </div>
-        )
-    }) : null;
+    // const historyView = mockhistory ? mockhistory.map((item, index) => {
+    //     return (
+    //         <div key={index} className="grid grid-cols-5 py-3 pl-4 border border-gray border-opacity-50 border-t-0 dark:text-white dark:bg-black-type1">
+    //             <div className="text-left flex space-x-2">{item.timestamp}</div>
+    //             <div className="text-left pl-0 sm:pl-8 lg:pl-0">{item.liquidated}</div>
+    //             <div className="lg:text-left sm:pl-10">{item.fees}</div>
+    //             <div className="text-left pl-4">{item.collateral}</div>
+    //             <div className="lg:text-left">{item.transactionHash}</div>
+    //         </div>
+    //     )
+    // }) : null;
 
 
     const hasDecimal = (n: number) => {
@@ -743,16 +744,16 @@ function Dashboard() {
         </div>
     );
 
-    const history = (<div className="pt-4 min-w-max">
-        <div className="flex justify-between space-x-24 bg-secondary pl-4 pr-16 py-2 border border-gray border-opacity-50 rounded-t-md font-semibold">
-            <div>Time stamp</div>
-            <div>Assets Liquidated</div>
-            <div>Transaction fees</div>
-            <div>Collateral sent (USD)</div>
-            <div>Transaction hash</div>
-        </div>
-        {historyView}
-    </div>);
+    // const history = (<div className="pt-4 min-w-max">
+    //     <div className="flex justify-between space-x-24 bg-secondary pl-4 pr-16 py-2 border border-gray border-opacity-50 rounded-t-md font-semibold">
+    //         <div>Time stamp</div>
+    //         <div>Assets Liquidated</div>
+    //         <div>Transaction fees</div>
+    //         <div>Collateral sent (USD)</div>
+    //         <div>Transaction hash</div>
+    //     </div>
+    //     {historyView}
+    // </div>);
 
 
     return (
@@ -762,7 +763,7 @@ function Dashboard() {
             {isValidUser && <Tab.Group
                 defaultIndex={0}
                 onChange={index => {
-                    console.log(index)
+                    // console.log(index)
                 }}>
                 {isValidUser && deposits && deposits.length === 0 && <Alert status="error">
                     <AlertIcon />
@@ -775,7 +776,7 @@ function Dashboard() {
                 </Tab.List>
                 <Tab.Panels>
                     <Tab.Panel>{dashboard}</Tab.Panel>
-                    <Tab.Panel>{history}</Tab.Panel>
+                    <Tab.Panel><HistoryTab paybackAddress="0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9"/></Tab.Panel>
                 </Tab.Panels>
             </Tab.Group>}
 
