@@ -100,17 +100,10 @@ const icons = {
     "AMPL": ethIcon,
 }
 
-interface GeckoETHData {
-    ethereum: {
-        usd: string
-    }
-}
-
 const getPrice = async (symbol: string) => {
     try {
         return axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${symbol}&vs_currencies=usd`).then(res => {
-            const d: GeckoETHData = res.data;
-            return d.ethereum.usd;
+            return res["data"][symbol]["usd"];
         })
     } catch (err) {
         console.log(err)
@@ -126,6 +119,31 @@ const getDollarValue = (symbol: string, value: number) => {
     } catch (err) {
         console.log(err)
     }
+}
+
+const calculateProtectedDeposit = async(userData: IUserReserveData[], userAccount: IUserAccount, userPosition: IUserPosition) => {
+    const totalDepositUSD = await getDollarValue("ethereum", userPosition.totalCollateralETH) 
+    const collateralsUserData = userData.filter(item => userAccount.collaterals.includes(item.token));
+    const actions = collateralsUserData.map(async item => await getDollarValue((item.symbol).toLowerCase(), item.currentATokenBalance));
+
+    const result = Promise.all(actions);
+
+    result.then(res => {
+        const sum  = (res as number[]).reduce((a, b) => a + b, 0);
+        if(totalDepositUSD !== undefined) {
+            const percentage = sum / totalDepositUSD;
+            return percentage.toFixed(2).toString();
+        }
+        else {
+            console.log("TOTAL DEPOSIT NOT FOUND");
+            return "";
+        }
+    }).catch(e => {
+        console.error;
+        return "";
+    });
+
+    // return (totalDepositUSD as number).toFixed(3).toString(); 
 }
 
 interface IDeposit {
@@ -175,6 +193,7 @@ function Dashboard() {
     const [displayLoader, setDisplayLoader] = useState(true);
     const [progressVal, setProgressVal] = useState(0);
     const [isMonitoring, setIsMonitoring] = useState(false);
+    const [protectedDeposit, setProtectedDeposit] = useState("70");
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -273,16 +292,22 @@ function Dashboard() {
 
 
 
-    // useEffect(() => {
-    //     if(userPosition?.totalCollateralETH !== undefined) {
-    //         try {
-    //             getDollarValue("ethereum", userPosition.totalCollateralETH)?.then( res => setAssetInUSD(res.toFixed(3).toString()));
-    //         } catch(err) {
-    //             console.log(err)
-    //         }
-    //     }
+    useEffect(() => {
+        if (userData && userAccount?.collaterals && userAccount.collaterals.length > 0 && userPosition?.totalCollateralETH !== undefined) {
+            try {
+               calculateProtectedDeposit(userData, userAccount, userPosition).then( res => {
+                   if(res !== undefined) setProtectedDeposit(res as string);
+                   
+               })
+               
+                
+            } catch (err) {
+                console.log(err)
+            }
+            
+        }
 
-    // },[userPosition]);
+    }, [userAccount, userPosition]);
 
     const getLatestUserAccount = (seconds = 0) => {
         console.log("getAccount()")
@@ -382,7 +407,10 @@ function Dashboard() {
 
     const approveMyCollateral = (_token: string, _symbol: string) => () => {
         setDisplayLoader(true);
-        // const collateralVal = userData.
+        // const collateralVal =
+        // const collateralVal = deposits && deposits.filter(item => item.asset === _symbol).map(item => item.value); 
+
+        // console.log(`Asset selected to be collaterized ${_symbol} and its value is ${collateralVal}`)
         contract
             .approveAsCollateralOnlyIfAllowedInAave(_token)
             .then(async (tx) => {
@@ -665,7 +693,7 @@ function Dashboard() {
                         <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
                         <div className="text-semibold text-5xl">{(userPosition?.totalCollateralETH)?.toFixed(3) || 0} ETH</div>
                         {userAccount && userAccount.status == EStatus.ACTIVATED
-                            ? <div className="text-green">70% of deposits are protected</div>
+                            ? <div className="text-green">{protectedDeposit}% of deposits are protected</div>
                             : <div className="text-red-type1">are not protected</div>
                         }
                     </div>
@@ -702,7 +730,7 @@ function Dashboard() {
                             <div>APY</div>
                         </div>
                         {depositView}
-                        {deposits && deposits.length > 0 && <div className="text-xs text-left pt-2 dark:text-white"><i>Note: Assets collaterized on AAVE has green background</i></div>}
+                        {deposits && deposits.length > 0 && <div className="text-xs text-left pt-2 dark:text-white"><i>Note: Asset collaterized on AAVE has green background</i></div>}
                     </div>
                 </div>
                 <div className="space-y-4 max-w-screen-sm">
