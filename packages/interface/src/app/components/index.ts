@@ -3,3 +3,4 @@ export { default as Home } from "./views/Home";
 export { default as Dashboard } from "./views/Dashboard";
 export { default as AboutUs } from "./views/AboutUs";
 export { default as HistoryTab } from "./views/HistoryTab";
+export { default as AlertBox } from "./views/AlertBox";

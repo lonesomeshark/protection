@@ -10,6 +10,7 @@ import {
     AlertTitle,
     AlertDescription,
 } from "@chakra-ui/react";
+import AlertBox from "./AlertBox";
 
 type Props = {
     connected: boolean,
@@ -19,6 +20,7 @@ function Home({ connected }: Props) {
 
     return (
         <div className="md:px-40 lg:px-72 space-y-8 md:mt-10 dark:bg-black-type1">
+            <AlertBox />
             { !connected && <Alert status="error">
                 <AlertIcon />
                 <AlertTitle mr={2}>Wallet not connected!</AlertTitle>
