@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Switch } from "@headlessui/react"
 import { NavLink } from "react-router-dom";
 import { MenuIcon } from "@heroicons/react/outline";
-import logo from "../../assets/logo.png";
+import logo from "../../logos/logo-circle-192.png";
 
 type Props = {
     address: string,
