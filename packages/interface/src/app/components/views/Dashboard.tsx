@@ -25,9 +25,10 @@ import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface,
 
 import ierc20Artifact from "@lonesomeshark/core/artifacts/@aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol/IERC20.json"
 import registryArtifact from "@lonesomeshark/core/artifacts/contracts/interfaces/KeeperRegistryInterface.sol/KeeperRegistryBaseInterface.json"
+import kovanAddresses from "@lonesomeshark/core/kovan.json";
 import { HistoryTab } from "..";
 
-
+const kovanTokens: {[k: string]: typeof kovanAddresses.proto[0]} = kovanAddresses.proto.reduce((a: any, b: any)=> { (a as any)[b.symbol] = b; return a},{})
 const getContract = (contract: "LoneSomeSharkMonitor" | "Subscribers", network: 'kovan') => {
     const s = require(`@lonesomeshark/core/deployed/${network}/${contract}.json`);
     return {
@@ -159,7 +160,12 @@ interface IDebt {
     interest: string
 }
 
-const filterDeposit = (d: IUserReserveData) => d.currentATokenBalance;
+const filterDeposit = (d: IUserReserveData) => {
+    if(d.symbol == "USDC"){
+        console.log(d)
+    }
+    return d.currentATokenBalance
+};
 
 const filterDebt = (d: IUserReserveData) => d.currentVariableDebt;
 
@@ -206,12 +212,13 @@ function Dashboard() {
             .then((data) => {
                 console.log("return from get user data:", data)
                 const d: IUserReserveData[] = data[0].map((d) => {
+                    const decimals = kovanTokens[d.symbol].decimals || 18;
                     return {
-                        "currentATokenBalance": Number(ethers.utils.formatEther(d.currentATokenBalance)),
-                        "currentStableDebt": Number(ethers.utils.formatEther(d.currentStableDebt)),
-                        "currentVariableDebt": Number(ethers.utils.formatEther(d.currentVariableDebt)),
-                        "principalStableDebt": Number(ethers.utils.formatEther(d.principalStableDebt)),
-                        "scaledVariableDebt": Number(ethers.utils.formatEther(d.scaledVariableDebt)),
+                        "currentATokenBalance": parseFloat(ethers.utils.formatUnits(d.currentATokenBalance, decimals)),
+                        "currentStableDebt": Number(ethers.utils.formatUnits(d.currentStableDebt, decimals)),
+                        "currentVariableDebt": Number(ethers.utils.formatUnits(d.currentVariableDebt, decimals)),
+                        "principalStableDebt": Number(ethers.utils.formatUnits(d.principalStableDebt, decimals)),
+                        "scaledVariableDebt": Number(ethers.utils.formatUnits(d.scaledVariableDebt, decimals)),
                         "stableBorrowRate": Number(ethers.utils.formatEther(d.stableBorrowRate)),
                         "liquidityRate": Number(ethers.utils.formatEther(d.liquidityRate)),
                         "stableRateLastUpdated": Number(ethers.utils.formatEther(d.stableRateLastUpdated)),
