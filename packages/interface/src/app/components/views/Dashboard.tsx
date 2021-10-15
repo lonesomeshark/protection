@@ -25,6 +25,7 @@ import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface,
 
 import ierc20Artifact from "@lonesomeshark/core/artifacts/@aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol/IERC20.json"
 import registryArtifact from "@lonesomeshark/core/artifacts/contracts/interfaces/KeeperRegistryInterface.sol/KeeperRegistryBaseInterface.json"
+import { HistoryTab } from "..";
 
 
 const getContract = (contract: "LoneSomeSharkMonitor" | "Subscribers", network: 'kovan') => {
@@ -89,7 +90,7 @@ const icons = {
     "MKR": ethIcon,
     "REN": ethIcon,
     "SNX": ethIcon,
-    "sUSD": usdcIcon,
+    "sUSD": ethIcon,
     "TUSD": ethIcon,
     "USDT": ethIcon,
     "WBTC": wbtcIcon,
@@ -100,17 +101,10 @@ const icons = {
     "AMPL": ethIcon,
 }
 
-interface GeckoETHData {
-    ethereum: {
-        usd: string
-    }
-}
-
 const getPrice = async (symbol: string) => {
     try {
         return axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${symbol}&vs_currencies=usd`).then(res => {
-            const d: GeckoETHData = res.data;
-            return d.ethereum.usd;
+            return res["data"][symbol]["usd"];
         })
     } catch (err) {
         console.log(err)
@@ -126,6 +120,28 @@ const getDollarValue = (symbol: string, value: number) => {
     } catch (err) {
         console.log(err)
     }
+}
+
+const calculateProtectedDeposit = async (userData: IUserReserveData[], userAccount: IUserAccount, userPosition: IUserPosition) => {
+    const totalDepositUSD = await getDollarValue("ethereum", userPosition.totalCollateralETH)
+    const collateralsUserData = userData.filter(item => userAccount.collaterals.includes(item.token));
+    const actions = collateralsUserData.map(async item => await getDollarValue((item.symbol).toLowerCase(), item.currentATokenBalance));
+
+    const result = Promise.all(actions);
+
+    const pc = result.then(res => {
+        const sum = (res as number[]).reduce((a, b) => a + b, 0);
+        if (totalDepositUSD !== undefined && totalDepositUSD !== 0) {
+            const percentage = (sum * 100) / totalDepositUSD;
+            return percentage.toFixed(3);
+        }
+    }).catch(e => {
+        console.error;
+        console.log("ERROR FOR DATA");
+        return "";
+    });
+
+    return pc;
 }
 
 interface IDeposit {
@@ -175,6 +191,7 @@ function Dashboard() {
     const [displayLoader, setDisplayLoader] = useState(true);
     const [progressVal, setProgressVal] = useState(0);
     const [isMonitoring, setIsMonitoring] = useState(false);
+    const [protectedDeposit, setProtectedDeposit] = useState("70");
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -273,16 +290,19 @@ function Dashboard() {
 
 
 
-    // useEffect(() => {
-    //     if(userPosition?.totalCollateralETH !== undefined) {
-    //         try {
-    //             getDollarValue("ethereum", userPosition.totalCollateralETH)?.then( res => setAssetInUSD(res.toFixed(3).toString()));
-    //         } catch(err) {
-    //             console.log(err)
-    //         }
-    //     }
-
-    // },[userPosition]);
+    useEffect(() => {
+        if (userData && userAccount?.collaterals && userAccount.collaterals.length > 0 && userPosition?.totalCollateralETH !== undefined) {
+            try {
+                console.log("calling CALCULATE PROTECTED DEPOSIT");
+                calculateProtectedDeposit(userData, userAccount, userPosition).then(res => {
+                    console.log("THE VALUE OF PROTECTED DEPOSIT ", res);
+                    if (res !== undefined) setProtectedDeposit(res as string);
+                })
+            } catch (err) {
+                console.log(err)
+            }
+        }
+    }, [userAccount, userPosition]);
 
     const getLatestUserAccount = (seconds = 0) => {
         console.log("getAccount()")
@@ -343,22 +363,22 @@ function Dashboard() {
         }
     ];
 
-    const mockhistory = [
-        {
-            timestamp: "10.10.2021 06:30",
-            liquidated: "ETH,DAI,YFI",
-            fees: "0.05 ETH",
-            collateral: "$ 12,232.34324",
-            transactionHash: "0xc1234wdsdcsas1233dasdasd"
-        },
-        {
-            timestamp: "10.11.2021 06:30",
-            liquidated: "UNI,BAT",
-            fees: "0.05 ETH",
-            collateral: "$ 12,232.34324",
-            transactionHash: "0xc1234wdsdcsas1233dasdasd"
-        }
-    ];
+    // const mockhistory = [
+    //     {
+    //         timestamp: "10.10.2021 06:30",
+    //         liquidated: "ETH,DAI,YFI",
+    //         fees: "0.05 ETH",
+    //         collateral: "$ 12,232.34324",
+    //         transactionHash: "0xc1234wdsdcsas1233dasdasd"
+    //     },
+    //     {
+    //         timestamp: "10.11.2021 06:30",
+    //         liquidated: "UNI,BAT",
+    //         fees: "0.05 ETH",
+    //         collateral: "$ 12,232.34324",
+    //         transactionHash: "0xc1234wdsdcsas1233dasdasd"
+    //     }
+    // ];
     const protectMyAssets = () => {
         console.log("protecting my assets: ");
         const val = formatTreshold(customThreshold);
@@ -382,7 +402,10 @@ function Dashboard() {
 
     const approveMyCollateral = (_token: string, _symbol: string) => () => {
         setDisplayLoader(true);
-        // const collateralVal = userData.
+        // const collateralVal =
+        // const collateralVal = deposits && deposits.filter(item => item.asset === _symbol).map(item => item.value); 
+
+        // console.log(`Asset selected to be collaterized ${_symbol} and its value is ${collateralVal}`)
         contract
             .approveAsCollateralOnlyIfAllowedInAave(_token)
             .then(async (tx) => {
@@ -426,17 +449,17 @@ function Dashboard() {
         )
     }) : null;
 
-    const historyView = mockhistory ? mockhistory.map((item, index) => {
-        return (
-            <div key={index} className="grid grid-cols-5 py-3 pl-4 border border-gray border-opacity-50 border-t-0 dark:text-white dark:bg-black-type1">
-                <div className="text-left flex space-x-2">{item.timestamp}</div>
-                <div className="text-left pl-0 sm:pl-8 lg:pl-0">{item.liquidated}</div>
-                <div className="lg:text-left sm:pl-10">{item.fees}</div>
-                <div className="text-left pl-4">{item.collateral}</div>
-                <div className="lg:text-left">{item.transactionHash}</div>
-            </div>
-        )
-    }) : null;
+    // const historyView = mockhistory ? mockhistory.map((item, index) => {
+    //     return (
+    //         <div key={index} className="grid grid-cols-5 py-3 pl-4 border border-gray border-opacity-50 border-t-0 dark:text-white dark:bg-black-type1">
+    //             <div className="text-left flex space-x-2">{item.timestamp}</div>
+    //             <div className="text-left pl-0 sm:pl-8 lg:pl-0">{item.liquidated}</div>
+    //             <div className="lg:text-left sm:pl-10">{item.fees}</div>
+    //             <div className="text-left pl-4">{item.collateral}</div>
+    //             <div className="lg:text-left">{item.transactionHash}</div>
+    //         </div>
+    //     )
+    // }) : null;
 
 
     const hasDecimal = (n: number) => {
@@ -555,7 +578,7 @@ function Dashboard() {
             {setThreshold}
             <div className="px-10 pb-8">
                 <div className="pb-2 opacity-50">Set your gas limit for the flash loan contract</div>
-                <div className="pb-4 opacity-50 text-xl max-w-min">
+                <div className="pb-4 text-xl max-w-min">
                     <input name="gasLimit" value={custmGasLimit} onChange={(e) => setCustmGasLimit(e.target.value)} className="bg-secondary w-28" />
                 </div>
                 {(userAccount && !userAccount?.payback) ?
@@ -665,7 +688,7 @@ function Dashboard() {
                         <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
                         <div className="text-semibold text-5xl">{(userPosition?.totalCollateralETH)?.toFixed(3) || 0} ETH</div>
                         {userAccount && userAccount.status == EStatus.ACTIVATED
-                            ? <div className="text-green">70% of deposits are protected</div>
+                            ? <div className="text-green">are protected</div>
                             : <div className="text-red-type1">are not protected</div>
                         }
                     </div>
@@ -702,7 +725,7 @@ function Dashboard() {
                             <div>APY</div>
                         </div>
                         {depositView}
-                        {deposits && deposits.length > 0 && <div className="text-xs text-left pt-2 dark:text-white"><i>Note: Assets collaterized on AAVE has green background</i></div>}
+                        {deposits && deposits.length > 0 && <div className="text-xs text-left pt-2 dark:text-white"><i>Note: Asset collaterized on AAVE has green background</i></div>}
                     </div>
                 </div>
                 <div className="space-y-4 max-w-screen-sm">
@@ -721,16 +744,16 @@ function Dashboard() {
         </div>
     );
 
-    const history = (<div className="pt-4 min-w-max">
-        <div className="flex justify-between space-x-24 bg-secondary pl-4 pr-16 py-2 border border-gray border-opacity-50 rounded-t-md font-semibold">
-            <div>Time stamp</div>
-            <div>Assets Liquidated</div>
-            <div>Transaction fees</div>
-            <div>Collateral sent (USD)</div>
-            <div>Transaction hash</div>
-        </div>
-        {historyView}
-    </div>);
+    // const history = (<div className="pt-4 min-w-max">
+    //     <div className="flex justify-between space-x-24 bg-secondary pl-4 pr-16 py-2 border border-gray border-opacity-50 rounded-t-md font-semibold">
+    //         <div>Time stamp</div>
+    //         <div>Assets Liquidated</div>
+    //         <div>Transaction fees</div>
+    //         <div>Collateral sent (USD)</div>
+    //         <div>Transaction hash</div>
+    //     </div>
+    //     {historyView}
+    // </div>);
 
 
     return (
@@ -740,7 +763,7 @@ function Dashboard() {
             {isValidUser && <Tab.Group
                 defaultIndex={0}
                 onChange={index => {
-                    console.log(index)
+                    // console.log(index)
                 }}>
                 {isValidUser && deposits && deposits.length === 0 && <Alert status="error">
                     <AlertIcon />
@@ -753,7 +776,7 @@ function Dashboard() {
                 </Tab.List>
                 <Tab.Panels>
                     <Tab.Panel>{dashboard}</Tab.Panel>
-                    <Tab.Panel>{history}</Tab.Panel>
+                    <Tab.Panel><HistoryTab paybackAddress="0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9"/></Tab.Panel>
                 </Tab.Panels>
             </Tab.Group>}
 

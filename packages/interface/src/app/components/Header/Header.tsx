@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Switch } from "@headlessui/react"
 import { NavLink } from "react-router-dom";
 import { MenuIcon } from "@heroicons/react/outline";
-import logo from "../../assets/logo.png";
+import {ReactComponent as Logo} from "../../assets/new-shark.svg";
 
 type Props = {
     address: string,
@@ -22,7 +22,7 @@ function Header({ address, network, balance, connected, isDark, toggleTheme, con
             <nav className="dark:text-white">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex justify-between items-center py-4">
-                        <div className="text-2xl font-semibold flex items-center space-x-2"><div className="rounded-md bg-purple"><img src={logo} alt="logo" className="transform scale-50 scale-x-75" /></div><div>LonesomeShark</div></div>
+                        <div className="text-2xl font-semibold flex items-center space-x-2"><div className="rounded-md"><Logo /></div><div>LonesomeShark</div></div>
                         <div className="hidden md:flex md:space-x-8 md:items-center">
                             {/* {connected && <div>Network : {network}</div>}
                             {connected && <div>Balance : {balance} ETH</div>} */}
