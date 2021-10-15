@@ -7,7 +7,8 @@ const providerAddress = ethers.utils.getAddress('0x88757f2f99175387ab4c6a4b3067c
 const aaveProvider = ethers.utils.getAddress('0x3c73A5E5785cAC854D468F727c606C07488a29D6');
 const uniswapRouterAddress = ethers.utils.getAddress('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D');
 const wethAddress = ethers.utils.getAddress('0xd0a1e359811322d97991e03f863a0c30c2cf029c');
-
+const mkrAddress = ethers.utils.getAddress('0x61e4CAE3DA7FD189e52a4879C7B8067D7C2Cc0FA');
+const usdcAddress = ethers.utils.getAddress('0xe22da380ee6B445bb8273C81944ADEB6E8450422');
 export const kovan = {
   linkAddress,
   chainlinkRegistryAddress,
@@ -15,5 +16,7 @@ export const kovan = {
   aaveProvider,
   uniswapRouterAddress,
   wethAddress,
+  mkrAddress,
+  usdcAddress,
 };
 export const networkAddresses = { kovan };
