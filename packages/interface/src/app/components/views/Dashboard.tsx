@@ -688,7 +688,7 @@ function Dashboard() {
                         <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
                         <div className="text-semibold text-5xl">{(userPosition?.totalCollateralETH)?.toFixed(3) || 0} ETH</div>
                         {userAccount && userAccount.status == EStatus.ACTIVATED
-                            ? <div className="text-green">{protectedDeposit}% of deposits are protected</div>
+                            ? <div className="text-green">are protected</div>
                             : <div className="text-red-type1">are not protected</div>
                         }
                     </div>
