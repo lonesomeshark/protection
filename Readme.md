@@ -1,4 +1,4 @@
-[![Add to Homescreen](https://img.shields.io/badge/Skynet-Add%20To%20Homescreen-00c65e?logo=skynet&labelColor=0d0d0d)](https://homescreen.hns.siasky.net/#/skylink/AQCbNkLANXHxPCBoXcgq6rauHa81Z5h9da88rVvijXSvTA)
+[![Add to Homescreen](https://img.shields.io/badge/Skynet-Add%20To%20Homescreen-00c65e?logo=skynet&labelColor=0d0d0d)](https://homescreen.hns.siasky.net/#/skylink/CACsOCZXxjDY53E51LVo3g5YTrg6T9qNkn_8oAQOTXhOow)
 
 ```
 #                                                         #####
