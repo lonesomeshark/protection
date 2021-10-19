@@ -145,14 +145,16 @@ function App() {
                 }}
               />
               <Route path="/home" exact>
-                <Home />
+                <Home connected={web3Provider !== null}/>
               </Route>
               <Route path="/dashboard" exact>
+                {/* {web3Provider ? <Dashboard /> : <Redirect to="/home" />} */}
                 <Dashboard />
               </Route>
               <Route path="/about-us" exact>
                 <AboutUs />
               </Route>
+              <Redirect to='/' />
             </Switch>
           </Router>
 

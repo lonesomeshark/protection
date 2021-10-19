@@ -26,14 +26,26 @@ import amplIcon from "../../assets/AMPL.svg";
 // import shield from "../../assets/shield.png";
 
 import { Tab as ChakraTab, Tabs, TabList, TabPanel, TabPanels } from "@chakra-ui/tabs";
+import { Progress } from "@chakra-ui/react";
+import { CircularProgress } from "@chakra-ui/react";
+import { Tooltip } from "@chakra-ui/react";
+import axios from "axios";
+import {
+    Alert,
+    AlertIcon,
+    AlertTitle,
+    AlertDescription,
+} from "@chakra-ui/react";
 
 import { ethers } from "ethers";
-import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface, PaybackLoan  } from '@lonesomeshark/core/typechain';
+import { Subscribers, IERC20, LoneSomeSharkMonitor, KeeperRegistryBaseInterface, PaybackLoan } from '@lonesomeshark/core/typechain';
 
 import ierc20Artifact from "@lonesomeshark/core/artifacts/@aave/protocol-v2/contracts/dependencies/openzeppelin/contracts/IERC20.sol/IERC20.json"
 import registryArtifact from "@lonesomeshark/core/artifacts/contracts/interfaces/KeeperRegistryInterface.sol/KeeperRegistryBaseInterface.json"
+import kovanAddresses from "@lonesomeshark/core/kovan.json";
+import { HistoryTab } from "..";
 
-
+const kovanTokens: {[k: string]: typeof kovanAddresses.proto[0]} = kovanAddresses.proto.reduce((a: any, b: any)=> { (a as any)[b.symbol] = b; return a},{})
 const getContract = (contract: "LoneSomeSharkMonitor" | "Subscribers", network: 'kovan') => {
     const s = require(`@lonesomeshark/core/deployed/${network}/${contract}.json`);
     return {
@@ -43,17 +55,19 @@ const getContract = (contract: "LoneSomeSharkMonitor" | "Subscribers", network: 
     }
 }
 interface IUserReserveData {
-    currentATokenBalance: number 
-    currentStableDebt: number 
-    currentVariableDebt: number 
-    principalStableDebt: number 
-    scaledVariableDebt: number 
-    stableBorrowRate: number 
-    liquidityRate: number 
-    stableRateLastUpdated: number 
-    usageAsCollateralEnabled: boolean;
-    token: string,
+    currentATokenBalance: number
+    currentStableDebt: number
+    currentVariableDebt: number
+    principalStableDebt: number
+    scaledVariableDebt: number
+    stableBorrowRate: number
+    liquidityRate: number
+    stableRateLastUpdated: number
+    usageAsCollateralEnabled: boolean
+    token: string
     symbol: string
+    variableBorrowRate: number
+    averageStableBorrowRate: number
 }
 enum EStatus {
     PAUSED,
@@ -77,8 +91,8 @@ interface IUserPosition {
 
 const linkAddress = "0xa36085F69e2889c224210F603D836748e7dC0088";
 
-const subscribers = getContract("Subscribers","kovan");
-const lonesomeshark = getContract("LoneSomeSharkMonitor","kovan"); 
+const subscribers = getContract("Subscribers", "kovan");
+const lonesomeshark = getContract("LoneSomeSharkMonitor", "kovan");
 const icons = {
     "ETH": ethIcon,
     "USDC": usdcIcon,
@@ -86,29 +100,74 @@ const icons = {
     "BAT": batIcon,
     "1INCH": inchIcon,
     //  "BUSD": ethIcon,
-     "DAI": daiIcon,
+    "DAI": daiIcon,
     "ENJ": ethIcon,
     "KNC": ethIcon,
-    "LINK":linkIcon,
-    "MANA":ethIcon,
-    "MKR": ethIcon ,
-    "REN": ethIcon ,
-    "SNX": ethIcon ,
-    "sUSD": usdcIcon,
+    "LINK": linkIcon,
+    "MANA": ethIcon,
+    "MKR": ethIcon,
+    "REN": ethIcon,
+    "SNX": ethIcon,
+    "sUSD": ethIcon,
     "TUSD": ethIcon,
-    "USDT": ethIcon ,
+    "USDT": ethIcon,
     "WBTC": wbtcIcon,
     "WETH": ethIcon,
-    "YFI": ethIcon ,
+    "YFI": ethIcon,
     "ZRX": ethIcon,
-    "UNI": ethIcon ,
+    "UNI": ethIcon,
     "AMPL": ethIcon,
 }
+
+const getPrice = async (symbol: string) => {
+    try {
+        return axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${symbol}&vs_currencies=usd`).then(res => {
+            return res["data"][symbol]["usd"];
+        })
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+const getDollarValue = (symbol: string, value: number) => {
+    if (value === undefined) return;
+    try {
+        return getPrice(symbol).then(res => {
+            return value * (Number(res));
+        })
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+const calculateProtectedDeposit = async (userData: IUserReserveData[], userAccount: IUserAccount, userPosition: IUserPosition) => {
+    const totalDepositUSD = await getDollarValue("ethereum", userPosition.totalCollateralETH)
+    const collateralsUserData = userData.filter(item => userAccount.collaterals.includes(item.token));
+    const actions = collateralsUserData.map(async item => await getDollarValue((item.symbol).toLowerCase(), item.currentATokenBalance));
+
+    const result = Promise.all(actions);
+
+    const pc = result.then(res => {
+        const sum = (res as number[]).reduce((a, b) => a + b, 0);
+        if (totalDepositUSD !== undefined && totalDepositUSD !== 0) {
+            const percentage = (sum * 100) / totalDepositUSD;
+            return percentage.toFixed(3);
+        }
+    }).catch(e => {
+        console.error;
+        console.log("ERROR FOR DATA");
+        return "";
+    });
+
+    return pc;
+}
+
 interface IDeposit {
     asset: "ETH" | string,
     assetIcon: typeof ethIcon,
     value: string,
-    apy: string
+    apy: string,
+    collaterized: boolean
 }
 
 interface IDebt {
@@ -118,7 +177,12 @@ interface IDebt {
     interest: string
 }
 
-const filterDeposit = (d: IUserReserveData) => d.currentATokenBalance;
+const filterDeposit = (d: IUserReserveData) => {
+    if(d.symbol == "USDC"){
+        console.log(d)
+    }
+    return d.currentATokenBalance
+};
 
 const filterDebt = (d: IUserReserveData) => d.currentVariableDebt;
 
@@ -126,14 +190,15 @@ const parseDebt = (d: IUserReserveData): IDebt => ({
     asset: d.symbol,
     assetIcon: (icons as any)[d.symbol] || ethIcon,
     value: (d.currentVariableDebt).toFixed(3) + "",
-    interest: (d.liquidityRate/10000000).toFixed(3) + "%"
-}) 
+    interest: (d.variableBorrowRate / 10000000).toFixed(3) + "%"
+})
 
 const parseDeposit = (d: IUserReserveData): IDeposit => ({
     asset: d.symbol,
     assetIcon: (icons as any)[d.symbol] || ethIcon,
     value: (d.currentATokenBalance).toFixed(3) + "",
-    apy: (d.liquidityRate/10000000).toFixed(3) + "%"
+    apy: (d.liquidityRate / 10000000).toFixed(3) + "%",
+    collaterized: d.usageAsCollateralEnabled
 })
 
 function Dashboard() {
@@ -145,9 +210,15 @@ function Dashboard() {
     const [userData, setUserData] = useState<IUserReserveData[]>();
     const [userPosition, setUserPosition] = useState<IUserPosition>();
     const [userAccount, setUserAccount] = useState<IUserAccount>();
+    const [isValidUser, setIsValidUser] = useState(false);
+    const [displayLoader, setDisplayLoader] = useState(true);
+    const [progressVal, setProgressVal] = useState(0);
+    const [isMonitoring, setIsMonitoring] = useState(false);
+    const [protectedDeposit, setProtectedDeposit] = useState("70");
 
     // contract interaction
     const provider = new ethers.providers.Web3Provider(window.ethereum);
+
     const signer = provider.getSigner();
 
     const contract = (new ethers.Contract(subscribers.address, subscribers.abi, signer)) as Subscribers;
@@ -158,18 +229,21 @@ function Dashboard() {
             .then((data) => {
                 console.log("return from get user data:", data)
                 const d: IUserReserveData[] = data[0].map((d) => {
+                    const decimals = kovanTokens[d.symbol].decimals || 18;
                     return {
-                        "currentATokenBalance": Number(ethers.utils.formatEther(d.currentATokenBalance)),
-                        "currentStableDebt": Number(ethers.utils.formatEther(d.currentStableDebt)),
-                        "currentVariableDebt": Number(ethers.utils.formatEther(d.currentVariableDebt)),
-                        "principalStableDebt": Number(ethers.utils.formatEther(d.principalStableDebt)),
-                        "scaledVariableDebt": Number(ethers.utils.formatEther(d.scaledVariableDebt)),
+                        "currentATokenBalance": parseFloat(ethers.utils.formatUnits(d.currentATokenBalance, decimals)),
+                        "currentStableDebt": Number(ethers.utils.formatUnits(d.currentStableDebt, decimals)),
+                        "currentVariableDebt": Number(ethers.utils.formatUnits(d.currentVariableDebt, decimals)),
+                        "principalStableDebt": Number(ethers.utils.formatUnits(d.principalStableDebt, decimals)),
+                        "scaledVariableDebt": Number(ethers.utils.formatUnits(d.scaledVariableDebt, decimals)),
                         "stableBorrowRate": Number(ethers.utils.formatEther(d.stableBorrowRate)),
                         "liquidityRate": Number(ethers.utils.formatEther(d.liquidityRate)),
                         "stableRateLastUpdated": Number(ethers.utils.formatEther(d.stableRateLastUpdated)),
                         "usageAsCollateralEnabled": d.usageAsCollateralEnabled,
                         "token": d.token,
-                        "symbol": d.symbol
+                        "symbol": d.symbol,
+                        "variableBorrowRate": Number(ethers.utils.formatEther(d.variableBorrowRate)),
+                        "averageStableBorrowRate": Number(ethers.utils.formatEther(d.averageStableBorrowRate))
                     }
                 });
                 const userPosition = {
@@ -186,21 +260,27 @@ function Dashboard() {
                 console.log("user position", userPosition)
                 setUserData(d);
                 setUserPosition(userPosition);
-                
+                setIsValidUser(true);
+                setDisplayLoader(false);
+
             })
             .catch(e => {
                 console.log("error getting getUserData")
                 console.error(e)
+                setDisplayLoader(false);
             });
     }, [userAccount?.collaterals.length])
 
-    useEffect(()=>{
-        const accountInterval = setInterval(() => getLatestUserAccount(), 30*1000); 
-        getLatestUserAccount()
-        return function(){
-            clearInterval(accountInterval)
+    useEffect(() => {
+
+        if (isValidUser) {
+            const accountInterval = setInterval(() => getLatestUserAccount(), 30 * 1000);
+            getLatestUserAccount()
+            return function () {
+                clearInterval(accountInterval)
+            }
         }
-    },[])
+    }, [isValidUser])
     useEffect(() => {
         if (isNaN(Number(customThreshold))) {
             // console.log("Not a number. Please enter a number.");
@@ -218,43 +298,65 @@ function Dashboard() {
 
         console.log("Entered threshold value ", customThreshold);
         setThrshldValdsnErrMsg("");
-    },[customThreshold])
-    useEffect(()=>{
-        if(userAccount?.payback){
+    }, [customThreshold])
+    useEffect(() => {
+        if (userAccount?.payback) {
             // const payback = (new ethers.Contract(userAccount?.payback, paybackArtifact.abi, signer)) as PaybackLoan;
             provider.getBalance(userAccount.payback)
-            .then((balance)=>{
-                console.log("balance of payback contract: ", ethers.utils.formatEther(balance))
+                .then((balance) => {
+                    console.log("balance of payback contract: ", ethers.utils.formatEther(balance))
 
-            })
-            .catch(console.error)
+                })
+                .catch(console.error)
         }
- 
-    },[userAccount?.payback])
 
-    const getLatestUserAccount = (seconds=0)=>{
+    }, [userAccount?.payback])
+
+
+
+    useEffect(() => {
+        if (userData && userAccount?.collaterals && userAccount.collaterals.length > 0 && userPosition?.totalCollateralETH !== undefined) {
+            try {
+                console.log("calling CALCULATE PROTECTED DEPOSIT");
+                calculateProtectedDeposit(userData, userAccount, userPosition).then(res => {
+                    console.log("THE VALUE OF PROTECTED DEPOSIT ", res);
+                    if (res !== undefined) setProtectedDeposit(res as string);
+                })
+            } catch (err) {
+                console.log(err)
+            }
+        }
+    }, [userAccount, userPosition]);
+
+    const getLatestUserAccount = (seconds = 0) => {
         console.log("getAccount()")
-        setTimeout(()=>{
+        setTimeout(() => {
             contract["getAccount()"]()
-            .then((account) =>{
-                const data = {
-                    status: account.status,
-                    payback: account.payback == "0x0000000000000000000000000000000000000000" ? "" : account.payback,
-                    threshold: parseToNumber(account.threshold),
-                    collaterals: account.collaterals
-                }
-                console.log("user account is", {account, data})
-                if(JSON.stringify(userAccount) != JSON.stringify(data)){
-                    setUserAccount(data)
-                }
-                if(data.threshold+"" != customThreshold &&  data.threshold > 0){
-                    setCustomThreshold(data.threshold+"");
-                } 
-            })
-            .catch(console.error)
-        },seconds *1000);
+                .then((account) => {
+                    const data = {
+                        status: account.status,
+                        payback: account.payback == "0x0000000000000000000000000000000000000000" ? "" : account.payback,
+                        threshold: parseToNumber(account.threshold),
+                        collaterals: account.collaterals
+                    }
+                    console.log("user account is", { account, data })
+                    if (JSON.stringify(userAccount) != JSON.stringify(data)) {
+                        setUserAccount(data)
+                    }
+                    if (data.threshold + "" != customThreshold && data.threshold > 0) {
+                        setCustomThreshold(data.threshold + "");
+                    }
+                    // setDisplayLoader(false);
+                })
+                .catch(e => {
+                    console.log("error getting user account");
+                    console.error;
+                    setIsValidUser(false);
+                    // setDisplayLoader(false);
+                })
+        }, seconds * 1000);
     }
-   
+
 
 
 
@@ -265,13 +367,15 @@ function Dashboard() {
                 asset: "ETH",
                 assetIcon: ethIcon,
                 value: "12,232.232",
-                apy: "23%"
+                apy: "23%",
+                collaterized: true
             },
             {
                 asset: "USDC",
                 assetIcon: usdcIcon,
                 value: "12,232.232",
-                apy: "23%"
+                apy: "23%",
+                collaterized: true
             }
         ];
     const debts = userData && userData.length > 0 ? userData?.filter(filterDebt).map(parseDebt) : [
@@ -283,51 +387,69 @@ function Dashboard() {
         }
     ];
 
-    const mockhistory = [
-        {
-            timestamp: "10.10.2021 06:30",
-            liquidated: "ETH,DAI,YFI",
-            fees: "0.05 ETH",
-            collateral: "$ 12,232.34324",
-            transactionHash: "0xc1234wdsdcsas1233dasdasd"
-        },
-        {
-            timestamp: "10.11.2021 06:30",
-            liquidated: "UNI,BAT",
-            fees: "0.05 ETH",
-            collateral: "$ 12,232.34324",
-            transactionHash: "0xc1234wdsdcsas1233dasdasd"
-        }
-    ];
-    const protectMyAssets = ()=>{
+    // const mockhistory = [
+    //     {
+    //         timestamp: "10.10.2021 06:30",
+    //         liquidated: "ETH,DAI,YFI",
+    //         fees: "0.05 ETH",
+    //         collateral: "$ 12,232.34324",
+    //         transactionHash: "0xc1234wdsdcsas1233dasdasd"
+    //     },
+    //     {
+    //         timestamp: "10.11.2021 06:30",
+    //         liquidated: "UNI,BAT",
+    //         fees: "0.05 ETH",
+    //         collateral: "$ 12,232.34324",
+    //         transactionHash: "0xc1234wdsdcsas1233dasdasd"
+    //     }
+    // ];
+    const protectMyAssets = () => {
         console.log("protecting my assets: ");
         const val = formatTreshold(customThreshold);
-        console.log({customThreshold, custmGasLimit});
-        contract.registerHF(val,{ value: custmGasLimit})
+        console.log({ customThreshold, custmGasLimit });
+        setDisplayLoader(true);
+        contract.registerHF(val, { value: custmGasLimit })
             .then(
-                async (tx) =>{
-                    console.log("sign up wiht us transaction: ",tx)
+                async (tx) => {
+                    console.log("sign up with us transaction: ", tx)
                     await tx.wait();
                     setAtIndex(1);
+                    setDisplayLoader(false);
                     getLatestUserAccount();
                 }
             )
-            .catch(console.error)
+            .catch(e => {
+                console.error;
+                setDisplayLoader(false);
+            })
     }
 
-    const approveMyCollateral = (_token: string, _symbol: string)=> ()=>{
+    const approveMyCollateral = (_token: string, _symbol: string) => () => {
+        setDisplayLoader(true);
+        // const collateralVal =
+        // const collateralVal = deposits && deposits.filter(item => item.asset === _symbol).map(item => item.value); 
+
+        // console.log(`Asset selected to be collaterized ${_symbol} and its value is ${collateralVal}`)
         contract
-        .approveAsCollateralOnlyIfAllowedInAave(_token)
-        .then((tx)=>{
-            console.log("transaction for allowing token: ",_token, _symbol, tx);
-            getLatestUserAccount(0.3);
-        })
-        .catch(console.error)
+            .approveAsCollateralOnlyIfAllowedInAave(_token)
+            .then(async (tx) => {
+                await tx.wait();
+                console.log("transaction for allowing token: ", _token, _symbol, tx);
+                setDisplayLoader(false);
+                getLatestUserAccount(0.3);
+
+
+            })
+            .catch(e => {
+                console.error;
+                setDisplayLoader(false);
+            })
     }
+
 
     const depositView = deposits ? deposits.map((item, index) => {
         return (
-            <div key={index} className="grid grid-cols-3 pl-4 pr-16 py-2 border border-gray border-opacity-50 border-t-0 dark:text-white">
+            <div key={index} className={`grid grid-cols-3 pl-4 pr-16 py-2 border border-gray border-opacity-50 border-t-0 dark:text-white ${item.collaterized ? 'bg-green bg-opacity-20 dark:bg-opacity-80' : 'bg-transparent'}`}>
                 <div className="text-left flex space-x-2">
                     <div><img src={item.assetIcon} alt="" /></div>
                     <div>{item.asset}</div>
@@ -351,22 +473,29 @@ function Dashboard() {
         )
     }) : null;
 
-    const historyView = mockhistory ? mockhistory.map((item, index) => {
-        return (
-            <div key={index} className="grid grid-cols-5 py-3 pl-4 border border-gray border-opacity-50 border-t-0 dark:text-white dark:bg-black-type1">
-                <div className="text-left flex space-x-2">{item.timestamp}</div>
-                <div className="text-left pl-0 sm:pl-8 lg:pl-0">{item.liquidated}</div>
-                <div className="lg:text-left sm:pl-10">{item.fees}</div>
-                <div className="text-left pl-4">{item.collateral}</div>
-                <div className="lg:text-left">{item.transactionHash}</div>
-            </div>
-        )
-    }) : null;
+    // const historyView = mockhistory ? mockhistory.map((item, index) => {
+    //     return (
+    //         <div key={index} className="grid grid-cols-5 py-3 pl-4 border border-gray border-opacity-50 border-t-0 dark:text-white dark:bg-black-type1">
+    //             <div className="text-left flex space-x-2">{item.timestamp}</div>
+    //             <div className="text-left pl-0 sm:pl-8 lg:pl-0">{item.liquidated}</div>
+    //             <div className="lg:text-left sm:pl-10">{item.fees}</div>
+    //             <div className="text-left pl-4">{item.collateral}</div>
+    //             <div className="lg:text-left">{item.transactionHash}</div>
+    //         </div>
+    //     )
+    // }) : null;
 
- 
+
     const hasDecimal = (n: number) => {
         return (n - Math.floor(n)) !== 0;
     }
+
+    // need to update
+    const handleUpdate = () => {
+        console.log("Update Custom Threshold");
+        handleFinish();
+    }
+
 
     const handleFinish = () => {
         //if all conditions met
@@ -394,42 +523,53 @@ function Dashboard() {
 
 
 
-    const startMonitoring = async ()=> {
+    const startMonitoring = async () => {
+        setIsMonitoring(true);
         const registryAddress = await shark.getRegistry();
         const id = await shark.getRegistryID();
-        if(userAccount?.status != EStatus.ACTIVATED){
+        if (userAccount?.status != EStatus.ACTIVATED) {
             linkToken
-            .approve(registryAddress, ethers.utils.parseEther("1.0"))
-            .then(async (tx)=>{
-                console.log("transaction from approving link", tx);
-                await tx.wait()
-                const registryContract = (new ethers.Contract(registryAddress, registryArtifact.abi, signer)) as KeeperRegistryBaseInterface
-                registryContract.addFunds(id, ethers.utils.parseEther("1.0"))
-                .then(async (tx)=>{
-                    console.log("added funds to registry", tx);
-                    contract
-                    .startMonitoring()
-                    .then(async(tx)=>{
-                        console.log("monitoring started, ", tx);
-                        await tx.wait()
-                        getLatestUserAccount()
-                    })
+                .approve(registryAddress, ethers.utils.parseEther("1.0"))
+                .then(async (tx) => {
+                    console.log("transaction from approving link", tx);
+                    await tx.wait()
+                    setProgressVal(33);
+                    const registryContract = (new ethers.Contract(registryAddress, registryArtifact.abi, signer)) as KeeperRegistryBaseInterface
+                    registryContract.addFunds(id, ethers.utils.parseEther("1.0"))
+                        .then(async (tx) => {
+                            console.log("added funds to registry", tx);
+                            setProgressVal(66);
+                            contract
+                                .startMonitoring()
+                                .then(async (tx) => {
+                                    console.log("monitoring started, ", tx);
+                                    await tx.wait()
+                                    setProgressVal(100);
+                                    setIsMonitoring(false);
+                                    getLatestUserAccount()
+                                })
+                        })
+                        .catch(e => {
+                            console.error;
+                            setIsMonitoring(false);
+                        })
                 })
-                .catch(console.error)
-            })
-            .catch(console.error);
+                .catch(e => {
+                    console.error;
+                    setIsMonitoring(false);
+                });
         }
     }
 
-    const pauseMonitoring = async () =>{
+    const pauseMonitoring = async () => {
         console.log("pause monitoring");
         contract.pauseMonitoring()
-        .then(async (tx)=>{
-            console.log("tx pause monitoring", tx)
-            await tx.wait();
-            getLatestUserAccount()
-        })
-        .catch(console.error)
+            .then(async (tx) => {
+                console.log("tx pause monitoring", tx)
+                await tx.wait();
+                getLatestUserAccount()
+            })
+            .catch(console.error)
     }
 
 
@@ -438,7 +578,7 @@ function Dashboard() {
             <div className="flex justify-between px-10 items-center">
                 <div className="space-y-2">
                     <div className="opacity-50 text-lg">Current Health Factor</div>
-                    <div className="text-5xl text-center">{userPosition?.healthFactor}</div>
+                    <div className="text-center text-xl">{(userPosition?.healthFactor)?.toFixed(2)}</div>
                 </div>
                 <div className="lg:pl-20 pl-10">
                     <svg width="52" height="24" viewBox="0 0 52 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -449,8 +589,8 @@ function Dashboard() {
                     <div className="opacity-50 text-lg pl-10">Current Liquidation Threshold</div>
 
                     {/* to be made input */}
-                    <div className="text-5xl max-w-min ml-10">
-                        <input name="threshold" value={customThreshold} onChange={(e) => setCustomThreshold(e.target.value)} className="w-28" />
+                    <div className="text-xl max-w-min ml-10">
+                        <input name="threshold " value={customThreshold} onChange={(e) => setCustomThreshold(e.target.value)} className="w-28 bg-secondary" />
                     </div>
                 </div>
             </div>
@@ -460,87 +600,135 @@ function Dashboard() {
     const registerWithUsTab = (
         <>
             {setThreshold}
-            <div className="pl-4 pb-8">
+            <div className="px-10 pb-8">
                 <div className="pb-2 opacity-50">Set your gas limit for the flash loan contract</div>
-                <div className="pb-4 opacity-50 text-5xl max-w-min">
-                    <input name="gasLimit" value={custmGasLimit} onChange={(e) => setCustmGasLimit(e.target.value)} className="w-72" />
+                <div className="pb-4 text-xl max-w-min">
+                    <input name="gasLimit" value={custmGasLimit} onChange={(e) => setCustmGasLimit(e.target.value)} className="bg-secondary w-28" />
                 </div>
-                    { userAccount && !userAccount?.payback &&
-                        <div>
-                            <div className="flex items-center space-x-4">
-                                <div><button className={`inline-block text-white bg-purple px-3 py-2 rounded-md`} onClick={handleFinish}>Sign Up</button></div>
-                                <div className="text-red">{gasValdsnErrMsg}</div>
-                            </div>
+                {(userAccount && !userAccount?.payback) ?
+                    <div>
+                        <div className="flex items-center space-x-4">
+                            <div><button className={`inline-block text-white bg-purple px-3 py-2 rounded-md`} onClick={handleUpdate}>Sign Up</button></div>
+                            <div className="text-red">{gasValdsnErrMsg}</div>
                         </div>
-                    }
+                    </div> : <div>
+                        <div className="flex items-center space-x-4">
+                            <div><button className={`inline-block text-white bg-purple px-3 py-2 rounded-md`} onClick={handleFinish}>Update Threshold</button></div>
+                            <div className="text-red">{gasValdsnErrMsg}</div>
+                        </div>
+                    </div>
+                }
             </div>
         </>
     );
 
-const collateralsTab = (<div key={userAccount?.collaterals.length} className="pt-6 pl-4 pb-8 space-x-2 space-y-2">
-    <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan and start monitoring your health ❤️</div>
-    { userData && userData.length>0 && userData?.map(token=>{
-        return <button 
-        key={token.token+""+ userAccount?.collaterals.length} 
-        className={` px-3 py-2 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'bg-green cursor-default opacity-50 text-gray' : 'text-white bg-purple'}`} 
-        onClick={approveMyCollateral(token.token, token.symbol)} 
-        disabled={userAccount?.collaterals.includes(token.token)}>{token.symbol}</button>
-    })
-    }
-    { userAccount && userAccount.collaterals.length >= 1 && (
-        <div 
-        className="p-2 m-1"
-        >
-        <button
-        className={` px-3 py-2 rounded-md text-white bg-purple`} 
-        >
-            NEXT
-        </button>
-        </div>
-        )
-    }
-</div>);
+    const collateralsTab = (<div key={userAccount?.collaterals.length} className="pl-4 space-x-2 space-y-2">
+        <div className="pb-2 md:pb-0 opacity-50 text-sm">Select tokens your contract can utilize to pay back the loan and start monitoring your health ❤️</div>
+        <div className="hidden md:grid grid-cols-3">
+            <div className="col-span-2 border-r-2 border-black border-opacity-25 text-sm">
+                <div className="opacity-50">List of tokens available for selection</div>
+                <div className="space-x-2 space-y-2 text-xs">
+                    {userData && userData.length > 0 && userData?.map(token => {
+                        return <Tooltip key={token.token + "" + userAccount?.collaterals.length} label="Collaterized on AAVE" aria-label="A tooltip">
+                            <button
 
-const monitoringTab = (
-<div className="pt-6 pl-4 pb-11">
-    <div className="pb-2 opacity-50">Send 1 LINK to the lonesome shark monitoring contract to watch out for your health</div>
-    {
-        ( userAccount && userAccount?.status != EStatus.ACTIVATED )
-        ? <button className="text-white bg-purple px-3 py-2 rounded-md" 
-            onClick={startMonitoring}>Start Monitoring</button>
-        :   <button className="text-white bg-purple px-3 py-2 rounded-md" 
-            onClick={pauseMonitoring}>Pause Monitoring</button>
+                                className={` px-1.5 py-1 rounded-md  ${token.usageAsCollateralEnabled ? 'text-purple border-purple' : 'text-gray-type1 border-gray-type1'} ${userAccount?.collaterals.includes(token.token) ? 'hidden' : 'border'}`}
+                                onClick={approveMyCollateral(token.token, token.symbol)}
+                                disabled={displayLoader || !token.usageAsCollateralEnabled}>{token.symbol}</button>
+                        </Tooltip>
 
-    }
-    
-</div>);
-
-const dashboard = (
-    <div>
-        <div className="md:grid grid-cols-3 mt-10 text-left gap-8 space-y-4 md:space-y-0">
-            <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
-
-                <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
-                    <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
-                    <div className="text-semibold text-5xl">{userPosition?.totalDebtETH || 0} ETH</div>
-                    {userAccount && userAccount.status == EStatus.ACTIVATED
-                        ? <div className="text-green">are protected</div>
-                        : <div className="text-red-type1">are not protected</div>
+                    })
                     }
                 </div>
-                { userAccount && userAccount.status == EStatus.ACTIVATED && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-10 z-5" />}
-                
+            </div >
+            <div className="pl-4">
+                <div className="text-sm opacity-50">Selected Tokens</div>
+                <div className="space-x-2 space-y-2 text-xs">
+                    {userData && userData.length > 0 && userData?.map(token => {
+                        return <button
+                            key={token.token + "" + userAccount?.collaterals.length}
+                            className={` px-1.5 py-1 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'text-green border border-green shadow-md' : 'hidden'}`}
+
+                            disabled>{token.symbol}</button>
+                    })
+                    }
+                </div>
+            </div>
+            <div>
+
             </div>
 
-            <div className="col-span-2">
+        </div>
+
+        {/* <div className="pb-2 opacity-50">Select tokens your contract can utilize to pay back the loan and start monitoring your health ❤️</div> */}
+        {userData && userData.length > 0 && userData?.map(token => {
+            return <button
+                key={token.token + "" + userAccount?.collaterals.length}
+                className={` md:hidden px-3 py-2 rounded-md ${userAccount?.collaterals.includes(token.token) ? 'border border-green cursor-default text-green shadow-md' : 'text-purple border border-purple'}`}
+                onClick={approveMyCollateral(token.token, token.symbol)}
+                disabled={userAccount?.collaterals.includes(token.token)}>{token.symbol}</button>
+        })
+        }
+        {userAccount && userAccount.collaterals.length >= 1 && (
+            <div
+                className="p-2 m-1"
+            >
+                <button
+                    className={` px-3 py-2 rounded-md text-white bg-purple`}
+                    onClick={() => setAtIndex(2)}
+                    disabled={displayLoader}
+                >
+                    NEXT
+                </button>
+            </div>
+        )
+        }
+    </div>);
+
+    const monitoringTab = (
+        <div className="pl-4 pb-11">
+            <div className="pb-2 opacity-50">Send 1 LINK to the lonesome shark monitoring contract to watch out for your health</div>
+            {isMonitoring && <div className="py-4 space-y-4">
+                <div className="flex justify-center"><CircularProgress isIndeterminate color="purple.500" /></div>
+                <Progress colorScheme="green" size="lg" value={progressVal} hasStripe />
+            </div>}
+            {
+                (userAccount && userAccount?.status != EStatus.ACTIVATED)
+                    ? <button className="text-white bg-purple px-3 py-2 rounded-md"
+                        onClick={startMonitoring}>Start Monitoring</button>
+                    : <button className="text-white bg-purple px-3 py-2 rounded-md"
+                        onClick={pauseMonitoring}>Pause Monitoring</button>
+
+            }
+
+        </div>);
+
+    const dashboard = (
+        <div>
+            <div className="md:grid grid-cols-3 mt-4 text-left gap-8 space-y-4 md:space-y-0">
+                <div className="col-span-1 bg-secondary overflow-hidden rounded-md">
+
+                    <div className="space-y-1 pt-4 pl-4 object-cover pb-4">
+                        <div className="text-lg opacity-50 pb-4">Total Aave Deposits in ETH</div>
+                        <div className="text-semibold text-5xl">{(userPosition?.totalCollateralETH)?.toFixed(3) || 0} ETH</div>
+                        {userAccount && userAccount.status == EStatus.ACTIVATED
+                            ? <div className="text-green">are protected</div>
+                            : <div className="text-red-type1">are not protected</div>
+                        }
+                    </div>
+                    {userAccount && userAccount.status == EStatus.ACTIVATED && <img src={shield} alt="protect" className="float-right object-none object-bottom relative -mt-8 z-5" />}
+
+                </div>
+
+                <div className="col-span-2">
                     <Tabs variant="enclosed" index={atIndex}>
                         <TabList>
-                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. {userAccount && userAccount?.payback? `Add more gas or update HF Treshold: ${userAccount.threshold}?`: "Register with us"}</ChakraTab>
+                            <ChakraTab onClick={() => setAtIndex(0)} className="dark:text-white">1. {userAccount && userAccount?.payback ? `Add more gas or update HF Threshold: ${userAccount.threshold}?` : "Register with us"}</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(1)} isDisabled={userAccount?.payback ? false : true} className="dark:text-white">2. Collaterals ( {userAccount?.collaterals.length} )</ChakraTab>
                             <ChakraTab onClick={() => setAtIndex(2)} isDisabled={userAccount && userAccount?.collaterals.length >= 1 ? false : true} className="dark:text-white">3. Monitoring</ChakraTab>
 
                         </TabList>
-                        <TabPanels className="bg-secondary">
+                        <TabPanels className="bg-secondary md:h-56 rounded-b-md">
                             <TabPanel>{registerWithUsTab}</TabPanel>
                             <TabPanel>{collateralsTab}</TabPanel>
                             <TabPanel>{monitoringTab}</TabPanel>
@@ -548,10 +736,10 @@ const dashboard = (
 
                     </Tabs>
                 </div>
-            
-        </div>
 
-        <div className="lg:flex mt-10 lg:space-x-8">
+            </div>
+
+            <div className="lg:flex mt-10 lg:space-x-8 space-y-4 lg:space-y-0">
                 <div className="space-y-4 max-w-screen-sm">
                     <div className="opacity-50 text-left dark:text-white">YOUR DEPOSITS</div>
                     <div>
@@ -561,6 +749,7 @@ const dashboard = (
                             <div>APY</div>
                         </div>
                         {depositView}
+                        {deposits && deposits.length > 0 && <div className="text-xs text-left pt-2 dark:text-white"><i>Note: Asset collaterized on AAVE has green background</i></div>}
                     </div>
                 </div>
                 <div className="space-y-4 max-w-screen-sm">
@@ -574,41 +763,48 @@ const dashboard = (
                         {debtView}
                     </div>
                 </div>
-            </div>   
+            </div>
 
         </div>
     );
 
-    const history = (<div className="pt-6 min-w-max">
-        <div className="flex justify-between space-x-24 bg-secondary pl-4 pr-16 py-2 border border-gray border-opacity-50 rounded-t-md font-semibold">
-            <div>Time stamp</div>
-            <div>Assets Liquidated</div>
-            <div>Transaction fees</div>
-            <div>Collateral sent (USD)</div>
-            <div>Transaction hash</div>
-        </div>
-        {historyView}
-    </div>);
+    // const history = (<div className="pt-4 min-w-max">
+    //     <div className="flex justify-between space-x-24 bg-secondary pl-4 pr-16 py-2 border border-gray border-opacity-50 rounded-t-md font-semibold">
+    //         <div>Time stamp</div>
+    //         <div>Assets Liquidated</div>
+    //         <div>Transaction fees</div>
+    //         <div>Collateral sent (USD)</div>
+    //         <div>Transaction hash</div>
+    //     </div>
+    //     {historyView}
+    // </div>);
 
 
     return (
-        <div className="dashboard max-w-7xl mx-auto px-6">
-            <Tab.Group
+        <div className="dashboard max-w-7xl mx-auto px-6 overflow-hidden">
+
+            {displayLoader && <div className="absolute w-full"><CircularProgress isIndeterminate color="purple.500" /></div>}
+            {isValidUser && <Tab.Group
                 defaultIndex={0}
                 onChange={index => {
-                    console.log(index)
+                    // console.log(index)
                 }}>
+                {isValidUser && deposits && deposits.length === 0 && <Alert status="error">
+                    <AlertIcon />
+                    <AlertTitle mr={2}>No AAVE deposits found on AAVE testnet for the selected wallet address.</AlertTitle>
+                    <AlertDescription>Also, make sure to connect to Kovan testnet.</AlertDescription>
+                </Alert>}
                 <Tab.List className="flex">
                     <Tab className={({ selected }) => selected ? "px-2 py-1 text-purple font-semibold" : "px-2 py-1 dark:text-white font-semibold"}>Dashboard</Tab>
                     <Tab className={({ selected }) => selected ? "px-2 py-1 text-purple font-semibold" : "px-2 py-1 dark:text-white font-semibold"}>History</Tab>
                 </Tab.List>
                 <Tab.Panels>
                     <Tab.Panel>{dashboard}</Tab.Panel>
-                    <Tab.Panel>{history}</Tab.Panel>
+                    <Tab.Panel><HistoryTab paybackAddress="0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9"/></Tab.Panel>
                 </Tab.Panels>
-            </Tab.Group>
+            </Tab.Group>}
 
-
+            {/* {!isValidUser && <div className="text-xl dark:text-white mt-24">No AAVE deposits found on AAVE testnet for the selected wallet address. <br/> Also, make sure to connect to Kovan testnet.</div>} */}
         </div>
     )
 }
@@ -622,6 +818,6 @@ function parseToNumber(b: ethers.BigNumber, decimals = 18) {
     return Number(parsedVal.toFixed(3));
 }
 
-function formatTreshold(t: number | string){
-    return ethers.utils.parseEther(t+"");
+function formatTreshold(t: number | string) {
+    return ethers.utils.parseEther(t + "");
 }
