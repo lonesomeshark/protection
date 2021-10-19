@@ -8,12 +8,12 @@
       "type": "image/svg"
     },
     {
-      "src": "logo192x192.png",
+      "src": "logo-circle-192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo512x512.png",
+      "src": "logo-circle-512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
@@ -24,7 +24,7 @@
   "theme_color": "#7749F8",
   "background_color": "#ffffff",
   "homepage_url": "https://lonesomeshark.xyz",
-  "skylink": "AQCbNkLANXHxPCBoXcgq6rauHa81Z5h9da88rVvijXSvTA",
+  "skylink": "CACsOCZXxjDY53E51LVo3g5YTrg6T9qNkn_8oAQOTXhOow",
   "metadata": {
     "name": "Lonesome Shark",
     "description": "lonesome shark",
