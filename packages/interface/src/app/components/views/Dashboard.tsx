@@ -1,13 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { Tab } from "@headlessui/react";
-import ethIcon from "../../assets/eth.svg";
-import usdcIcon from "../../assets/usdc.png";
-import daiIcon from "../../assets/dai.svg";
+
+import ethIcon from "../../assets/ETH.svg";
+import usdcIcon from "../../assets/USDC.png";
+import aaveIcon from "../../assets/AAVE.png";
 import batIcon from "../../assets/BAT.svg";
-import linkIcon from "../../assets/link.svg";
 import inchIcon from "../../assets/1INCH.svg";
+import daiIcon from "../../assets/DAI.svg";
+// import enjIcon from "../../assets/enj.svg";
+import kncIcon from "../../assets/KNC.svg"; 
+import linkIcon from "../../assets/LINK.svg";
+import manaIcon from "../../assets/MANA.svg";
+import mkrIcon from "../../assets/MKR.svg";
+import renIcon from "../../assets/REN.svg";
+import snxIcon from "../../assets/SNX.svg";
+import sUSDIcon from "../../assets/SUSD.svg";
+import tUSDIcon from "../../assets/TUSD.svg";
+import USDTIcon from "../../assets/USDT.svg";
 import wbtcIcon from "../../assets/WBTC.svg";
-import shield from "../../assets/shield.png";
+// import wethIcon from "../../assets/WETH.svg";
+import yfiIcon from "../../assets/YFI.svg";
+import zrxIcon from "../../assets/ZRX.svg";
+import uniIcon from "../../assets/UNI.svg";
+import amplIcon from "../../assets/AMPL.svg";
+// import shield from "../../assets/shield.png";
+
 import { Tab as ChakraTab, Tabs, TabList, TabPanel, TabPanels } from "@chakra-ui/tabs";
 import { Progress } from "@chakra-ui/react";
 import { CircularProgress } from "@chakra-ui/react";
